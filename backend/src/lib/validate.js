@@ -3,12 +3,12 @@ import {z} from "zod";
 const registerSchema = z.object({
     username: z.string().min(3).max(10),
     email: z.string().email(),
-    password: z.string().min(8).max(10),
+    password: z.string().min(8).max(100),
 });
 
 const loginSchema = z.object({
     email: z.string().email(),
-    password: z.string().min(8).max(10),
+    password: z.string().min(8).max(100),
 });
 
 export const validateRegister = (data) => {

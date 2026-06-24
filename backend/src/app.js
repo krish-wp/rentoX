@@ -7,24 +7,17 @@ const app = express();
 
 app.use(express.json());
 app.use(cors());
-
 app.use(cookieParser());
-
-app.get('/', async (req, res) => {
-  try {
-    const user = await prisma.user.findMany();
-
-    res.json({
-      message: 'Rentox is running',
-      user,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-});
 
 import authRouter from './routes/auth.routes.js';
 
 app.use('/api/v1/auth', authRouter);
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.statusCode || 500).json({
+    message: err.message || 'Internal Server Error',
+  });
+});
 
 export default app;
