@@ -4,7 +4,10 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "build": "echo 'Build phase - no actions needed for Express'",
+    "test": "echo 'Test scripts not yet configured'"
   },
   "keywords": [],
   "author": "",
