@@ -34,15 +34,16 @@ const register = async (req, res) => {
       email,
       password: hashedPassword,
     },
+    select: {
+      id: true,
+      userName: true,
+      email: true,
+    },
   });
 
   res.json({
     message: 'User registered successfully',
-    user: newUser.select({
-      id: true,
-      userName: true,
-      email: true,
-    }),
+    user: newUser,
   });
 };
 
@@ -89,7 +90,7 @@ const login = async (req, res) => {
 };
 
 const profile = async (req, res) => {
-  const userId = req.body.userId;
+  const userId = req.user;
 
   const user = await prisma.user.findUnique({
     where: {
@@ -99,7 +100,7 @@ const profile = async (req, res) => {
 
   const { password, ...safeUser } = user;
 
-  return res.status(200).json({ safeUser });
+  return res.status(200).json({ user: safeUser });
 };
 
 const logOut = async (req, res) => {
