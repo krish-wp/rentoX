@@ -20,14 +20,14 @@ model User {
   email              String   @unique
   password           String
 
-  mobileNumber       String
+  mobileNumber       String?
 
   vehicles Vehicle[]
   requests RentalRequest[]
 
-  state              String
-  district           String
-  pincode            String
+  state              String?
+  district           String?
+  pincode            String?
 
   isProfileCompleted Boolean  @default(false)
 
