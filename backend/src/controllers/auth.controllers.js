@@ -2,13 +2,15 @@ import { validateRegister, validateLogin } from '../lib/validate.js';
 import prisma from '../lib/prisma.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import AppError from '../utils/appError.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
-const register = async (req, res) => {
+const register = asyncHandler(async (req, res) => {
   //validation of the fields
   const validation = await validateRegister(req.body);
 
   if (!validation.success) {
-    return res.status(400).json({ message: validation.error.message });
+    throw new AppError(validation.error.message, 400);
   }
   const { username, email, password } = validation.data;
 
@@ -20,9 +22,7 @@ const register = async (req, res) => {
   });
 
   if (existingUser) {
-    return res
-      .status(400)
-      .json({ message: 'User already exists please login' });
+    throw new AppError('user already exist', 409);
   }
 
   //hashing the password
@@ -41,14 +41,18 @@ const register = async (req, res) => {
     },
   });
 
-  res.json({
+  res.status(201).json({
     message: 'User registered successfully',
     user: newUser,
   });
-};
+});
 
-const login = async (req, res) => {
+const login = asyncHandler(async (req, res) => {
   const validation = await validateLogin(req.body);
+
+  if (!validation.success) {
+    throw new AppError('please enter valid details', 400);
+  }
 
   const { email, password } = validation.data;
 
@@ -59,7 +63,7 @@ const login = async (req, res) => {
   });
 
   if (!existingUser) {
-    return res.status(400).json({ message: 'User not found please register' });
+    throw new AppError('user not found please register', 401);
   }
 
   const isPasswordCorrect = await bcrypt.compare(
@@ -68,9 +72,7 @@ const login = async (req, res) => {
   );
 
   if (!isPasswordCorrect) {
-    return res.status(400).json({
-      message: 'Wrong password please try again',
-    });
+    throw new AppError('Please enter correct password', 401);
   }
 
   const token = jwt.sign({ userId: existingUser.id }, process.env.JWT_SECRET, {
@@ -87,9 +89,9 @@ const login = async (req, res) => {
   res.status(200).json({
     message: 'user logged in successfully',
   });
-};
+});
 
-const profile = async (req, res) => {
+const profile = asyncHandler(async (req, res) => {
   const userId = req.user;
 
   const user = await prisma.user.findUnique({
@@ -101,12 +103,12 @@ const profile = async (req, res) => {
   const { password, ...safeUser } = user;
 
   return res.status(200).json({ user: safeUser });
-};
+});
 
-const logOut = async (req, res) => {
+const logOut = asyncHandler(async (req, res) => {
   res.clearCookie('token');
   return res.status(200).json({
     message: 'Logged out successfully',
   });
-};
+});
 export { register, login, profile, logOut };

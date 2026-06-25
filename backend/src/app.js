@@ -10,7 +10,6 @@ app.use(cors());
 app.use(cookieParser());
 
 import authRouter from './routes/auth.routes.js';
-
 app.use('/api/v1/auth', authRouter);
 
 app.use((err, req, res, next) => {
