@@ -1,0 +1,19 @@
+import { Router } from 'express';
+import {
+  getAllVehicles,
+  getVehicleById,
+  createVehicle,
+  updateVehicle,
+  deleteVehicle,
+} from '../controllers/vehicle.controller.js';
+import authMiddleware from '../middleware/jwt.js';
+
+const router = Router();
+
+router.get('/', authMiddleware, getAllVehicles);
+router.get('/:id', authMiddleware, getVehicleById);
+router.post('/', authMiddleware, createVehicle);
+router.put('/:id', authMiddleware, updateVehicle);
+router.delete('/:id', authMiddleware, deleteVehicle);
+
+export default router;
