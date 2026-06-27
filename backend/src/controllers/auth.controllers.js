@@ -98,11 +98,21 @@ const profile = asyncHandler(async (req, res) => {
     where: {
       id: userId,
     },
+    select: {
+      id: true,
+      userName: true,
+      email: true,
+      mobileNumber: true,
+      state: true,
+      district: true,
+      pincode: true,
+      isProfileCompleted: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 
-  const { password, ...safeUser } = user;
-
-  return res.status(200).json({ user: safeUser });
+  return res.status(200).json({ user });
 });
 
 const logOut = asyncHandler(async (req, res) => {
