@@ -16,7 +16,7 @@ const getAllVehicles = asyncHandler(async (req, res) => {
 
     // Exclude logged-in user's vehicles
     ownerId: {
-      not: req.user.id, // Change to req.user if you store only the id
+      not: req.user, // Change to req.user if you store only the id
     },
 
     ...(type && { type }),

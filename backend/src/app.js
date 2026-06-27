@@ -11,9 +11,11 @@ app.use(cookieParser());
 
 import authRouter from './routes/auth.routes.js';
 import vehicleRouter from './routes/vehicle.routes.js';
+import requestRouter from './routes/request.routes.js';
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/vehicles', vehicleRouter);
+app.use('/api/v1/requests', requestRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
