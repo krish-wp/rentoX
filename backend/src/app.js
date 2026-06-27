@@ -10,8 +10,12 @@ app.use(cors());
 app.use(cookieParser());
 
 import authRouter from './routes/auth.routes.js';
-app.use('/api/v1/auth', authRouter);
+import vehicleRouter from './routes/vehicle.routes.js';
 
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/vehicles', vehicleRouter);
+
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(err.statusCode || 500).json({
