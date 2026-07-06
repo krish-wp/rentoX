@@ -4,29 +4,32 @@ RentoX is a vehicle rental marketplace project. The goal is to let users registe
 
 ## Project Status
 
-This project is in the initial setup stage.
+This project is in active development.
 
 Current progress:
 
-- Backend folder created
-- Prisma configured
-- PostgreSQL datasource configured
-- Database models added for users, vehicles, and rental requests
-- Frontend folder created, but not built yet
+- Backend API fully built with Express.js
+- Prisma ORM configured with PostgreSQL
+- JWT authentication with access/refresh tokens
+- OTP-based email verification on registration
+- Vehicle CRUD operations with ownership validation
+- Rental request system (send, accept, reject)
+- Email service via Gmail OAuth2
 
 ## Tech Stack
 
-Backend:
-
-- Node.js
-- Prisma ORM
-- PostgreSQL
-- dotenv
-
-Frontend:
-
-- Not created yet
-- Planned as a separate frontend app inside the `frontend` folder
+- Runtime: Node.js (v18+)
+- Framework: Express.js
+- Database: PostgreSQL with Prisma ORM
+- Authentication: JWT (access + refresh tokens) with httpOnly cookies
+- Password Hashing: bcrypt
+- Email: Nodemailer (Gmail OAuth2)
+- Validation: Zod
+- Cookie Handling: cookie-parser
+- CORS: cors
+- Logging: morgan
+- API Docs: Swagger (swagger-jsdoc + swagger-ui-express)
+- Linting: ESLint + Prettier
 
 ## Folder Structure
 
@@ -35,26 +38,31 @@ rentoX
 ├── backend
 │   ├── prisma
 │   │   ├── schema.prisma
-│   │   ├── migrations
-│   │   └── generated
+│   │   └── migrations
 │   ├── src
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── lib/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── utils/
 │   ├── .env
-│   ├── package.json
-│   ├── package-lock.json
-│   └── prisma.config.ts
+│   ├── .gitignore
+│   └── package.json
 ├── frontend
+├── docs/
+├── package.json
 ├── .gitignore
 └── README.md
 ```
 
 ## Database Models
 
-The current Prisma schema includes:
-
-- `User` - stores user account and profile details
-- `Vehicle` - stores vehicle listing details
-- `RentalRequest` - stores rental requests from users
-- `RequestStatus` - tracks request status as `PENDING`, `ACCEPTED`, or `REJECTED`
+- `User` - stores user account, profile, and OTP verification fields
+- `Vehicle` - stores vehicle listing details with owner reference
+- `RentalRequest` - stores rental requests with status tracking
+- `RequestStatus` - enum: `PENDING`, `ACCEPTED`, `REJECTED`
 
 ## 🚀 Getting Started
 
@@ -62,6 +70,7 @@ The current Prisma schema includes:
 
 - Node.js (v18+)
 - PostgreSQL (local or remote)
+- Gmail account with OAuth2 credentials (for email service)
 
 ### Setup
 
@@ -72,15 +81,23 @@ cd backend
 npm install
 ```
 
-2. **Set up PostgreSQL**
+2. **Set up environment variables**
 
-- Create a database named `rentox`
-- Update `DATABASE_URL` in `.env` if needed
+Create a `.env` file in `backend/`:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/rentox
+JWT_SECRET=your-secret-key
+GOOGLE_USER=your-gmail@gmail.com
+GOOGLE_CLIENT_ID=your-client-id
+GOOGLE_CLIENT_SECRET=your-client-secret
+GOOGLE_REFRESH_TOKEN=your-refresh-token
+```
 
 3. **Run Prisma migrations**
 
 ```bash
-npx prisma migrate dev --name init
+npx prisma migrate dev
 ```
 
 4. **Start the server**
@@ -94,37 +111,29 @@ npm run dev
 
 ## 📱 Features
 
-- User registration and login (JWT cookies)
+- User registration with OTP email verification
+- Login with JWT (access + refresh tokens)
 - Browse available vehicles
-- Send rental requests
-- View your sent and received requests
-- Approve/reject requests
-
-## 🛠️ Tech Stack
-
-- Backend: Node.js, Express.js
-- Database: PostgreSQL with Prisma ORM
-- Authentication: JWT with cookies
-- Frontend: HTML, CSS, JavaScript (Bootstrap)
-- Validation: Zod
+- Add/edit/delete your own vehicles
+- Send rental requests to vehicle owners
+- Accept/reject rental requests
+- User profile management
 
 ## 🔐 Security
 
-- All API endpoints require authentication
+- OTP-based email verification on registration
+- JWT with httpOnly cookies for refresh tokens
+- Password hashing with bcrypt
 - Ownership validation for vehicles and requests
 - Environment variables for secrets
 
 ## 📌 Next Steps
 
-- Add email notifications
 - Implement search and filtering
 - Add admin dashboard
+- Add rate limiting on auth endpoints
 - Deploy to production
 
 ## 📄 License
 
 MIT
-
----
-
-Built with ❤️ for the modern rental economy
