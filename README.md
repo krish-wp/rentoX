@@ -56,76 +56,75 @@ The current Prisma schema includes:
 - `RentalRequest` - stores rental requests from users
 - `RequestStatus` - tracks request status as `PENDING`, `ACCEPTED`, or `REJECTED`
 
-## Getting Started
+## 🚀 Getting Started
 
-### 1. Clone the repository
+### Prerequisites
 
-```bash
-git clone <your-repository-url>
-cd rentoX
-```
+- Node.js (v18+)
+- PostgreSQL (local or remote)
 
-### 2. Install backend dependencies
+### Setup
+
+1. **Install dependencies**
 
 ```bash
 cd backend
 npm install
 ```
 
-### 3. Create environment file
+2. **Set up PostgreSQL**
 
-Create a `.env` file inside the `backend` folder.
+- Create a database named `rentox`
+- Update `DATABASE_URL` in `.env` if needed
 
-```env
-DATABASE_URL="postgresql://username:password@localhost:5432/rentox"
-```
-
-Replace `username`, `password`, and database name with your own PostgreSQL details.
-
-### 4. Run Prisma migrations
+3. **Run Prisma migrations**
 
 ```bash
-npx prisma migrate dev
+npx prisma migrate dev --name init
 ```
 
-### 5. Generate Prisma client
+4. **Start the server**
 
 ```bash
-npx prisma generate
+npm run dev
 ```
 
-## Useful Commands
+5. **Open in browser**
+   Go to http://localhost:5000
 
-Run Prisma Studio:
+## 📱 Features
 
-```bash
-npx prisma studio
-```
+- User registration and login (JWT cookies)
+- Browse available vehicles
+- Send rental requests
+- View your sent and received requests
+- Approve/reject requests
 
-Create a new migration after editing `schema.prisma`:
+## 🛠️ Tech Stack
 
-```bash
-npx prisma migrate dev --name migration_name
-```
+- Backend: Node.js, Express.js
+- Database: PostgreSQL with Prisma ORM
+- Authentication: JWT with cookies
+- Frontend: HTML, CSS, JavaScript (Bootstrap)
+- Validation: Zod
 
-## Git Notes
+## 🔐 Security
 
-Files that should not be pushed to GitHub are ignored using `.gitignore`, including:
+- All API endpoints require authentication
+- Ownership validation for vehicles and requests
+- Environment variables for secrets
 
-- `node_modules/`
-- `.env`
-- generated Prisma files
-- logs and build output
+## 📌 Next Steps
 
-Do not commit real database passwords or secret keys.
+- Add email notifications
+- Implement search and filtering
+- Add admin dashboard
+- Deploy to production
 
-## Next Steps
+## 📄 License
 
-Planned work:
+MIT
 
-- Build backend API routes
-- Add authentication
-- Add vehicle listing APIs
-- Add rental request APIs
-- Build frontend UI
-- Connect frontend with backend
+---
+
+Built with ❤️ for the modern rental economy
