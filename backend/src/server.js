@@ -1,5 +1,8 @@
+import express from 'express';
 import app from './app.js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -12,6 +15,13 @@ if (!DATABASE_URL || !JWT_SECRET) {
 }
 
 const PORT = process.env.PORT || 5000;
+
+// Fix for __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '../../frontend')));
 
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
