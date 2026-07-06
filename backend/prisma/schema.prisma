@@ -12,10 +12,14 @@ model User {
   userName           String
   email              String          @unique
   password           String
+  otp           String?
+  otpExpiry     DateTime?
+
   mobileNumber       String?
   state              String?
   district           String?
   pincode            String?
+  verified           Boolean          @default(false)
   isProfileCompleted Boolean         @default(false)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
