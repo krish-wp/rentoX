@@ -8,8 +8,19 @@ dotenv.config();
 
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REFRESH_TOKEN = process.env.GOOGLE_REFRESH_TOKEN;
+const GOOGLE_USER = process.env.GOOGLE_USER;
 
-if (!DATABASE_URL || !JWT_SECRET) {
+if (
+  !DATABASE_URL ||
+  !JWT_SECRET ||
+  !GOOGLE_CLIENT_ID ||
+  !GOOGLE_CLIENT_SECRET ||
+  !GOOGLE_REFRESH_TOKEN ||
+  !GOOGLE_USER
+) {
   console.error('Missing required environment variables.');
   process.exit(1);
 }
