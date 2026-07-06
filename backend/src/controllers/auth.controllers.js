@@ -4,6 +4,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import asyncHandler from '../utils/asyncHandler.js';
+import client from '../config/google.oauth.js';
 
 const register = asyncHandler(async (req, res) => {
   //validation of the fields
@@ -62,6 +63,7 @@ const login = asyncHandler(async (req, res) => {
     },
   });
 
+  console.log('Existing User:', existingUser); // Debugging line
   if (!existingUser) {
     throw new AppError('user not found please register', 401);
   }
@@ -75,19 +77,34 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError('Please enter correct password', 401);
   }
 
-  const token = jwt.sign({ userId: existingUser.id }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
+  const accessToken = jwt.sign(
+    { userId: existingUser.id },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '15m',
+    },
+  );
 
-  res.cookie('token', token, {
-    httponly: true,
+  const refreshToken = jwt.sign(
+    { userId: existingUser.id },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '7d',
+    },
+  );
+
+  res.cookie('token', refreshToken, {
+    httpOnly: true,
     secure: false,
     sameSite: 'strict',
     maxAge: 7 * 24 * 3600 * 1000,
   });
 
+  console.log('Token set in cookie:', refreshToken); // Debugging line
+
   res.status(200).json({
     message: 'user logged in successfully',
+    accessToken,
   });
 });
 
@@ -116,9 +133,92 @@ const profile = asyncHandler(async (req, res) => {
 });
 
 const logOut = asyncHandler(async (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+  });
+
   return res.status(200).json({
     message: 'Logged out successfully',
   });
 });
-export { register, login, profile, logOut };
+
+// const googleLogin = asyncHandler(async (req, res) => {
+//   const { tokenId } = req.body;
+
+//   // Verify the token with Google
+//   const ticket = await client.verifyIdToken({
+//     idToken: tokenId,
+//     audience: process.env.GOOGLE_CLIENT_ID,
+//   });
+
+//   const payload = ticket.getPayload();
+
+//   // Check if the user already exists
+//   const existingUser = await prisma.user.findUnique({
+//     where: {
+//       email: payload.email,
+//     },
+//   });
+
+//   if (!existingUser) {
+//     return res.status(404).json({
+//       success: false,
+//       message: 'Account not found. Please sign up first.',
+//     });
+//   }
+
+//   // Generate a JWT token
+//   const refreshToken = jwt.sign(
+//     { userId: existingUser.id },
+//     process.env.JWT_SECRET,
+//     {
+//       expiresIn: '1d',
+//     },
+//   );
+
+//   res.cookie('token', refreshToken, {
+//     httponly: true,
+//     secure: false,
+//     sameSite: 'strict',
+//     maxAge: 7 * 24 * 3600 * 1000,
+//   });
+
+//   res.status(200).json({
+//     message: 'Google login successful',
+//   });
+// });
+
+const refreshToken = asyncHandler(async (req, res) => {
+  const refreshToken = req.cookies.token;
+
+  if (!refreshToken) {
+    throw new AppError('No refresh token provided', 401);
+  }
+
+  const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+  const userId = decoded.userId;
+
+  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: '15m',
+  });
+
+  const refreshTokenNew = jwt.sign({ userId }, process.env.JWT_SECRET, {
+    expiresIn: '7d',
+  });
+
+  res.cookie('token', refreshTokenNew, {
+    httponly: true,
+    secure: false,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 3600 * 1000,
+  });
+
+  res.status(200).json({
+    message: 'Token refreshed successfully',
+    accessToken,
+  });
+});
+
+export { register, login, profile, logOut, refreshToken };
