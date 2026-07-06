@@ -22,6 +22,11 @@ const vehicleSchema = z.object({
   description: z.string().max(500).optional(),
 });
 
+const otpSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(6),
+});
+
 export const validateRegister = (data) => {
   return registerSchema.safeParse(data);
 };
@@ -32,4 +37,8 @@ export const validateLogin = (data) => {
 
 export const validateVehicle = (data) => {
   return vehicleSchema.safeParse(data);
+};
+
+export const validateOtp = (data) => {
+  return otpSchema.safeParse(data);
 };

@@ -1,10 +1,16 @@
-import { validateRegister, validateLogin } from '../lib/validate.js';
+import {
+  validateRegister,
+  validateLogin,
+  validateOtp,
+} from '../lib/validate.js';
 import prisma from '../lib/prisma.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import client from '../config/google.oauth.js';
+// import client from '../config/google.oauth.js';
+import { otpGenerator, generateOTPhtml } from '../utils/otp.js';
+import sendEmail from '../services/email.service.js';
 
 const register = asyncHandler(async (req, res) => {
   //validation of the fields
@@ -16,24 +22,50 @@ const register = asyncHandler(async (req, res) => {
   const { username, email, password } = validation.data;
 
   //check if the user already exists
-  const existingUser = await prisma.user.findUnique({
+  let existingUser = await prisma.user.findUnique({
     where: {
       email,
     },
   });
 
   if (existingUser) {
-    throw new AppError('user already exist', 409);
+    if (existingUser.verified) {
+      throw new AppError('user already exist', 409);
+    }
   }
 
   //hashing the password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user.create({
-    data: {
-      userName: username,
+  const otp = otpGenerator();
+
+  const otpEmail = generateOTPhtml(otp);
+
+  await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
+
+  if (!existingUser) {
+    existingUser = await prisma.user.create({
+      data: {
+        userName: username,
+        email,
+        password: hashedPassword,
+        verified: false,
+      },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+      },
+    });
+  }
+
+  existingUser = await prisma.user.update({
+    where: {
       email,
-      password: hashedPassword,
+    },
+    data: {
+      otp,
+      otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // OTP valid for 10 minutes
     },
     select: {
       id: true,
@@ -43,8 +75,47 @@ const register = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json({
-    message: 'User registered successfully',
-    user: newUser,
+    message: 'otp sent to your email please verify your account',
+  });
+});
+
+const verifyOtp = asyncHandler(async (req, res) => {
+  const validation = await validateOtp(req.body);
+
+  if (!validation.success) {
+    throw new AppError(validation.error.message, 400);
+  }
+
+  const { email, otp } = validation.data;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  if (user.otp !== otp || new Date() > user.otpExpiry) {
+    throw new AppError('Invalid or expired OTP', 400);
+  }
+
+  // If OTP is valid, mark the user as verified
+  await prisma.user.update({
+    where: {
+      email,
+    },
+    data: {
+      verified: true,
+      otp: null,
+      otpExpiry: null,
+    },
+  });
+
+  res.status(200).json({
+    message: 'Account verified successfully now you can login to your account',
   });
 });
 
@@ -63,9 +134,12 @@ const login = asyncHandler(async (req, res) => {
     },
   });
 
-  console.log('Existing User:', existingUser); // Debugging line
   if (!existingUser) {
     throw new AppError('user not found please register', 401);
+  }
+
+  if (!existingUser.verified) {
+    throw new AppError('Please verify your account first', 401);
   }
 
   const isPasswordCorrect = await bcrypt.compare(
@@ -99,8 +173,6 @@ const login = asyncHandler(async (req, res) => {
     sameSite: 'strict',
     maxAge: 7 * 24 * 3600 * 1000,
   });
-
-  console.log('Token set in cookie:', refreshToken); // Debugging line
 
   res.status(200).json({
     message: 'user logged in successfully',
@@ -221,4 +293,4 @@ const refreshToken = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, profile, logOut, refreshToken };
+export { register, login, profile, logOut, refreshToken, verifyOtp };
