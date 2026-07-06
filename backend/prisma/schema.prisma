@@ -1,91 +1,62 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                 String   @id @default(uuid())
-
+  id                 String          @id @default(uuid())
   userName           String
-
-  email              String   @unique
+  email              String          @unique
   password           String
-
   mobileNumber       String?
-
-  vehicles Vehicle[]
-  requests RentalRequest[]
-
   state              String?
   district           String?
   pincode            String?
-
-  isProfileCompleted Boolean  @default(false)
-
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  isProfileCompleted Boolean         @default(false)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  requests           RentalRequest[]
+  vehicles           Vehicle[]
 }
 
 model Vehicle {
-  id          String   @id @default(uuid())
-
+  id          String          @id @default(uuid())
   ownerId     String
-
-  plateNumber String @unique
-
+  plateNumber String          @unique
   brand       String
   model       String
   type        String
-
   pricePerDay Int
-
   location    String
-
   description String
-
   imageUrl    String
-
-  isAvailable Boolean  @default(true)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  owner        User @relation(fields: [ownerId], references: [id])
-
-  requests RentalRequest[]
-}
-
-enum RequestStatus{
-  PENDING
-  ACCEPTED
-  REJECTED
+  isAvailable Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  requests    RentalRequest[]
+  owner       User            @relation(fields: [ownerId], references: [id])
 }
 
 model RentalRequest {
-  id        String   @id @default(uuid())
-
+  id        String        @id @default(uuid())
   senderId  String
   vehicleId String
-
   startDate DateTime
   endDate   DateTime
-
   message   String?
+  status    RequestStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  sender    User          @relation(fields: [senderId], references: [id])
+  vehicle   Vehicle       @relation(fields: [vehicleId], references: [id])
+}
 
-  status    RequestStatus   @default(PENDING)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  sender    User     @relation(fields: [senderId], references: [id])
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
