@@ -266,7 +266,7 @@ const logOut = asyncHandler(async (req, res) => {
 //   });
 // });
 
-const refreshToken = asyncHandler(async (req, res) => {
+const handleRefreshToken = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.token;
 
   if (!refreshToken) {
@@ -297,4 +297,4 @@ const refreshToken = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, profile, logOut, refreshToken, verifyOtp };
+export { register, login, profile, logOut, handleRefreshToken, verifyOtp };

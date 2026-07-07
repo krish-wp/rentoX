@@ -5,7 +5,7 @@ import {
   profile,
   logOut,
   // googleLogin,
-  refreshToken,
+  handleRefreshToken,
   verifyOtp,
 } from '../controllers/auth.controllers.js';
 import authMiddleware from '../middleware/jwt.js';
@@ -17,7 +17,7 @@ router.get('/me', authMiddleware, profile);
 router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', authMiddleware, logOut);
-router.post('/refresh', refreshToken);
+router.post('/refresh', handleRefreshToken);
 
 router.post('/verify-otp', verifyOtp);
 
