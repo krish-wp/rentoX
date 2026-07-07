@@ -43,6 +43,8 @@ const register = asyncHandler(async (req, res) => {
 
   await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
 
+  const hashedOtp = await bcrypt.hash(otp, 10);
+
   if (!existingUser) {
     existingUser = await prisma.user.create({
       data: {
@@ -64,7 +66,7 @@ const register = asyncHandler(async (req, res) => {
       email,
     },
     data: {
-      otp,
+      otp: hashedOtp,
       otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // OTP valid for 10 minutes
     },
     select: {
@@ -98,7 +100,9 @@ const verifyOtp = asyncHandler(async (req, res) => {
     throw new AppError('User not found', 404);
   }
 
-  if (user.otp !== otp || new Date() > user.otpExpiry) {
+  const isOtpValid = await bcrypt.compare(otp, user.otp);
+
+  if (!isOtpValid || new Date() > user.otpExpiry) {
     throw new AppError('Invalid or expired OTP', 400);
   }
 
@@ -251,7 +255,7 @@ const logOut = asyncHandler(async (req, res) => {
 //   );
 
 //   res.cookie('token', refreshToken, {
-//     httponly: true,
+//     httpOnly: true,
 //     secure: false,
 //     sameSite: 'strict',
 //     maxAge: 7 * 24 * 3600 * 1000,
@@ -281,7 +285,7 @@ const refreshToken = asyncHandler(async (req, res) => {
   });
 
   res.cookie('token', refreshTokenNew, {
-    httponly: true,
+    httpOnly: true,
     secure: false,
     sameSite: 'strict',
     maxAge: 7 * 24 * 3600 * 1000,
