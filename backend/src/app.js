@@ -5,22 +5,31 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import openapi from '../../docs/openapi.json' with { type: 'json' };
 import morgan from 'morgan';
+import helmet from 'helmet';
+import {
+  authLimiter,
+  globalLimiter,
+  vehicleLimiter,
+  requestLimiter,
+} from './middleware/ratelimit.js';
 
 const app = express();
 
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json({ limit: '10kb' }));
 app.use(cors());
 app.use(cookieParser());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
+app.use(helmet());
+app.use(globalLimiter);
 
 import authRouter from './routes/auth.routes.js';
 import vehicleRouter from './routes/vehicle.routes.js';
 import requestRouter from './routes/request.routes.js';
 
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/vehicles', vehicleRouter);
-app.use('/api/v1/rental-requests', requestRouter);
+app.use('/api/v1/auth', authLimiter, authRouter);
+app.use('/api/v1/vehicles', vehicleLimiter, vehicleRouter);
+app.use('/api/v1/rental-requests', requestLimiter, requestRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
