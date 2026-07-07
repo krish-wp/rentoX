@@ -1,15 +1,14 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import asyncHandler from '../utils/asyncHandler.js';
+import AppError from '../utils/appError.js';
 dotenv.config();
 
 const authMiddleware = asyncHandler((req, res, next) => {
-  const token = req.headers.authorization.split(' ')[1];
+  const token = req.headers?.authorization?.split(' ')?.[1];
 
   if (!token) {
-    return res.status(401).json({
-      message: 'Unauthorized',
-    });
+    throw new AppError('Unauthorized', 401);
   }
 
   try {
