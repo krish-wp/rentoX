@@ -1,13 +1,14 @@
 import nodemailer from 'nodemailer';
+import config from '../config/constants.js';
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     type: 'OAuth2',
-    user: process.env.GOOGLE_USER,
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
+    user: config.googleUser,
+    clientId: config.googleClientId,
+    clientSecret: config.googleClientSecret,
+    refreshToken: config.googleRefreshToken,
   },
 });
 
@@ -21,7 +22,7 @@ transporter.verify((error, success) => {
 
 const sendEmail = async (to, subject, html) => {
   const mailOptions = {
-    from: process.env.GOOGLE_USER,
+    from: config.googleUser,
     to,
     subject,
     html,

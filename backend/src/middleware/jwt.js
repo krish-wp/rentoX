@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/appError.js';
-dotenv.config();
+import config from '../config/constants.js';
 
 const authMiddleware = asyncHandler((req, res, next) => {
   const token = req.headers?.authorization?.split(' ')?.[1];
@@ -12,7 +11,7 @@ const authMiddleware = asyncHandler((req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwtSecret);
     req.user = decoded.userId;
     next();
   } catch (error) {

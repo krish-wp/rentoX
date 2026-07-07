@@ -8,12 +8,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import asyncHandler from '../utils/asyncHandler.js';
-// import client from '../config/google.oauth.js';
 import { otpGenerator, generateOTPhtml } from '../utils/otp.js';
 import sendEmail from '../services/email.service.js';
+import config from '../config/constants.js';
 
 const register = asyncHandler(async (req, res) => {
-  //validation of the fields
   const validation = await validateRegister(req.body);
 
   if (!validation.success) {
@@ -21,11 +20,8 @@ const register = asyncHandler(async (req, res) => {
   }
   const { username, email, password } = validation.data;
 
-  //check if the user already exists
   let existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (existingUser) {
@@ -34,8 +30,7 @@ const register = asyncHandler(async (req, res) => {
     }
   }
 
-  //hashing the password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
 
   const otp = otpGenerator();
 
@@ -43,7 +38,7 @@ const register = asyncHandler(async (req, res) => {
 
   await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
 
-  const hashedOtp = await bcrypt.hash(otp, 10);
+  const hashedOtp = await bcrypt.hash(otp, config.bcryptSaltRounds);
 
   if (!existingUser) {
     existingUser = await prisma.user.create({
@@ -62,12 +57,10 @@ const register = asyncHandler(async (req, res) => {
   }
 
   existingUser = await prisma.user.update({
-    where: {
-      email,
-    },
+    where: { email },
     data: {
       otp: hashedOtp,
-      otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // OTP valid for 10 minutes
+      otpExpiry: new Date(Date.now() + config.otpExpiryMinutes * 60 * 1000),
     },
     select: {
       id: true,
@@ -91,9 +84,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
   const { email, otp } = validation.data;
 
   const user = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!user) {
@@ -106,11 +97,8 @@ const verifyOtp = asyncHandler(async (req, res) => {
     throw new AppError('Invalid or expired OTP', 400);
   }
 
-  // If OTP is valid, mark the user as verified
   await prisma.user.update({
-    where: {
-      email,
-    },
+    where: { email },
     data: {
       verified: true,
       otp: null,
@@ -133,9 +121,7 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = validation.data;
 
   const existingUser = await prisma.user.findUnique({
-    where: {
-      email,
-    },
+    where: { email },
   });
 
   if (!existingUser) {
@@ -157,25 +143,21 @@ const login = asyncHandler(async (req, res) => {
 
   const accessToken = jwt.sign(
     { userId: existingUser.id },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: '15m',
-    },
+    config.jwtSecret,
+    { expiresIn: config.accessTokenExpiry },
   );
 
   const refreshToken = jwt.sign(
     { userId: existingUser.id },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: '7d',
-    },
+    config.jwtRefreshSecret,
+    { expiresIn: config.refreshTokenExpiry },
   );
 
   res.cookie('token', refreshToken, {
     httpOnly: true,
     secure: false,
     sameSite: 'strict',
-    maxAge: 7 * 24 * 3600 * 1000,
+    maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 
   res.status(200).json({
@@ -188,9 +170,7 @@ const profile = asyncHandler(async (req, res) => {
   const userId = req.user;
 
   const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
+    where: { id: userId },
     select: {
       id: true,
       userName: true,
@@ -220,52 +200,6 @@ const logOut = asyncHandler(async (req, res) => {
   });
 });
 
-// const googleLogin = asyncHandler(async (req, res) => {
-//   const { tokenId } = req.body;
-
-//   // Verify the token with Google
-//   const ticket = await client.verifyIdToken({
-//     idToken: tokenId,
-//     audience: process.env.GOOGLE_CLIENT_ID,
-//   });
-
-//   const payload = ticket.getPayload();
-
-//   // Check if the user already exists
-//   const existingUser = await prisma.user.findUnique({
-//     where: {
-//       email: payload.email,
-//     },
-//   });
-
-//   if (!existingUser) {
-//     return res.status(404).json({
-//       success: false,
-//       message: 'Account not found. Please sign up first.',
-//     });
-//   }
-
-//   // Generate a JWT token
-//   const refreshToken = jwt.sign(
-//     { userId: existingUser.id },
-//     process.env.JWT_SECRET,
-//     {
-//       expiresIn: '1d',
-//     },
-//   );
-
-//   res.cookie('token', refreshToken, {
-//     httpOnly: true,
-//     secure: false,
-//     sameSite: 'strict',
-//     maxAge: 7 * 24 * 3600 * 1000,
-//   });
-
-//   res.status(200).json({
-//     message: 'Google login successful',
-//   });
-// });
-
 const handleRefreshToken = asyncHandler(async (req, res) => {
   const refreshToken = req.cookies.token;
 
@@ -273,22 +207,22 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
     throw new AppError('No refresh token provided', 401);
   }
 
-  const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+  const decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
   const userId = decoded.userId;
 
-  const accessToken = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '15m',
+  const accessToken = jwt.sign({ userId }, config.jwtSecret, {
+    expiresIn: config.accessTokenExpiry,
   });
 
-  const refreshTokenNew = jwt.sign({ userId }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
+  const refreshTokenNew = jwt.sign({ userId }, config.jwtRefreshSecret, {
+    expiresIn: config.refreshTokenExpiry,
   });
 
   res.cookie('token', refreshTokenNew, {
     httpOnly: true,
     secure: false,
     sameSite: 'strict',
-    maxAge: 7 * 24 * 3600 * 1000,
+    maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 
   res.status(200).json({
