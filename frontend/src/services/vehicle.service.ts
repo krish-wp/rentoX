@@ -1,6 +1,11 @@
 import api from "@/lib/api";
 import type { Vehicle, VehicleFilters, PaginatedVehicles } from "@/types/vehicle";
 
+export const getMyVehicles = async (): Promise<{ vehicles: Vehicle[] }> => {
+  const response = await api.get<{ vehicles: Vehicle[] }>("/vehicles/mine");
+  return response.data;
+};
+
 export const getVehicles = async (filters: VehicleFilters = {}): Promise<PaginatedVehicles> => {
   const params = new URLSearchParams();
   if (filters.page) params.set("page", String(filters.page));
@@ -26,6 +31,11 @@ export const createVehicle = async (data: Omit<Vehicle, "id" | "ownerId" | "isAv
 
 export const updateVehicle = async (id: string, data: Omit<Vehicle, "id" | "ownerId" | "isAvailable" | "createdAt" | "updatedAt" | "owner">): Promise<Vehicle> => {
   const response = await api.put<Vehicle>(`/vehicles/${id}`, data);
+  return response.data;
+};
+
+export const updateVehicleAvailability = async (id: string, isAvailable: boolean): Promise<Vehicle> => {
+  const response = await api.put<Vehicle>(`/vehicles/${id}`, { isAvailable });
   return response.data;
 };
 
