@@ -25,24 +25,22 @@ export default function MyVehiclesPage() {
   const [actionError, setActionError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const fetchVehicles = async () => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const data = await getMyVehicles();
-      setVehicles(data.vehicles);
-    } catch {
-      setError("Failed to load your vehicles. Make sure the backend supports GET /vehicles/mine.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
-      await fetchVehicles();
+      setIsLoading(true);
+      setError("");
+      try {
+        const data = await getMyVehicles();
+        if (!cancelled) setVehicles(data.vehicles);
+      } catch {
+        if (!cancelled) setError("Failed to load your vehicles. Make sure the backend supports GET /vehicles/mine.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     };
     load();
+    return () => { cancelled = true; };
   }, []);
 
   const handleToggleAvailability = async (vehicle: Vehicle) => {
@@ -93,7 +91,7 @@ export default function MyVehiclesPage() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600" role="alert">
               {error}
             </div>
           )}
@@ -124,6 +122,9 @@ export default function MyVehiclesPage() {
                           src={vehicle.imageUrl}
                           alt={`${vehicle.brand} ${vehicle.model}`}
                           className="w-full sm:w-32 h-24 object-cover rounded-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
                         />
                       )}
                       <div className="flex-1">
