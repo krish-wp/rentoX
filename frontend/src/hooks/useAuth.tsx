@@ -52,9 +52,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await authService.logout();
-    setAccessToken(null);
-    setUser(null);
+    try {
+      await authService.logout();
+    } catch {
+      // Server may be down — clear client state anyway
+    } finally {
+      setAccessToken(null);
+      setUser(null);
+    }
   };
 
   return (
