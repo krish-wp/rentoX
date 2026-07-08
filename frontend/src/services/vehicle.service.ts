@@ -34,8 +34,8 @@ export const updateVehicle = async (id: string, data: Omit<Vehicle, "id" | "owne
   return response.data;
 };
 
-export const updateVehicleAvailability = async (id: string, isAvailable: boolean): Promise<Vehicle> => {
-  const response = await api.put<Vehicle>(`/vehicles/${id}`, { isAvailable });
+export const updateVehicleAvailability = async (id: string): Promise<Vehicle> => {
+  const response = await api.patch<Vehicle>(`/vehicles/${id}/availability`);
   return response.data;
 };
 

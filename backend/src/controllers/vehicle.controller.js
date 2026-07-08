@@ -278,6 +278,29 @@ const myVehicles = asyncHandler(async (req, res) => {
   });
 });
 
+const toggleAvailability = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { id },
+  });
+
+  if (!vehicle) {
+    return res.status(404).json({ error: 'Vehicle not found' });
+  }
+
+  if (vehicle.ownerId !== req.user) {
+    return res.status(403).json({ error: 'You are not authorized to update this vehicle' });
+  }
+
+  const updated = await prisma.vehicle.update({
+    where: { id },
+    data: { isAvailable: !vehicle.isAvailable },
+  });
+
+  res.status(200).json(updated);
+});
+
 export {
   getAllVehicles,
   getVehicleById,
@@ -285,4 +308,5 @@ export {
   updateVehicle,
   deleteVehicle,
   myVehicles,
+  toggleAvailability,
 };

@@ -50,7 +50,7 @@ export default function MyVehiclesPage() {
     setProcessingId(vehicle.id);
     setActionError("");
     try {
-      await updateVehicleAvailability(vehicle.id, !vehicle.isAvailable);
+      await updateVehicleAvailability(vehicle.id);
       setVehicles((prev) =>
         prev.map((v) => (v.id === vehicle.id ? { ...v, isAvailable: !v.isAvailable } : v))
       );
