@@ -11,17 +11,22 @@ import type { Vehicle } from "@/types/vehicle";
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const [featuredVehicles, setFeaturedVehicles] = useState<Vehicle[]>([]);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       try {
         const data = await getVehicles({ limit: 6 });
-        setFeaturedVehicles(data.vehicles);
+        if (!cancelled) setFeaturedVehicles(data.vehicles);
       } catch {
         // Not logged in or API error — show empty state
+      } finally {
+        if (!cancelled) setIsLoadingVehicles(false);
       }
     };
     load();
+    return () => { cancelled = true; };
   }, []);
 
   return (
@@ -97,7 +102,16 @@ export default function Home() {
         </div>
       </section>
 
-      {featuredVehicles.length > 0 && (
+      {isLoadingVehicles && (
+        <section className="py-16 px-4">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-2xl font-bold text-center mb-10">Featured Vehicles</h2>
+            <div className="text-center py-12 text-gray-500">Loading featured vehicles...</div>
+          </div>
+        </section>
+      )}
+
+      {!isLoadingVehicles && featuredVehicles.length > 0 && (
         <section className="py-16 px-4">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
@@ -115,6 +129,9 @@ export default function Home() {
                         src={vehicle.imageUrl}
                         alt={`${vehicle.brand} ${vehicle.model}`}
                         className="w-full h-48 object-cover rounded-t-xl"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
                       />
                     )}
                     <CardContent className="space-y-2">
