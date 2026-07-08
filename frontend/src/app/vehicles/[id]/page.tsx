@@ -24,8 +24,12 @@ const bookingSchema = z.object({
 }).refine((data) => new Date(data.startDate) < new Date(data.endDate), {
   message: "Start date must be before end date",
   path: ["endDate"],
-}).refine((data) => new Date(data.startDate) >= new Date(), {
-  message: "Start date must be in the future",
+}).refine((data) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(data.startDate) >= today;
+}, {
+  message: "Start date must be today or in the future",
   path: ["startDate"],
 }).refine((data) => {
   const days = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24);
@@ -61,6 +65,7 @@ export default function VehicleDetailPage() {
     register,
     handleSubmit,
     watch,
+    reset,
     formState: { errors },
   } = useForm<BookingFormData>({
     resolver: zodResolver(bookingSchema),
@@ -69,9 +74,13 @@ export default function VehicleDetailPage() {
   const startDate = watch("startDate");
   const endDate = watch("endDate");
 
-  const totalDays = startDate && endDate
-    ? Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
-    : 0;
+  const totalDays = (() => {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    if (isNaN(start) || isNaN(end) || end <= start) return 0;
+    return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+  })();
 
   useEffect(() => {
     if (!vehicleId || typeof vehicleId !== "string") {
@@ -80,17 +89,19 @@ export default function VehicleDetailPage() {
       return;
     }
 
+    let cancelled = false;
     const loadVehicle = async () => {
       try {
         const data = await getVehicle(vehicleId);
-        setVehicle(data.vehicle);
+        if (!cancelled) setVehicle(data.vehicle);
       } catch {
-        setError("Vehicle not found.");
+        if (!cancelled) setError("Vehicle not found.");
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
     loadVehicle();
+    return () => { cancelled = true; };
   }, [vehicleId]);
 
   const onSubmit = async (data: BookingFormData) => {
@@ -107,6 +118,7 @@ export default function VehicleDetailPage() {
         message: data.message,
       });
       setSuccess("Rental request sent! The owner will review your request.");
+      reset();
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError?.response?.data?.message || "Failed to send request. Please try again.");
@@ -115,7 +127,7 @@ export default function VehicleDetailPage() {
     }
   };
 
-  const isOwner = user?.id === vehicle?.ownerId;
+  const isOwner = !!(user && vehicle && vehicle.ownerId && user.id === vehicle.ownerId);
   const today = new Date().toISOString().split("T")[0];
 
   if (!vehicleId || typeof vehicleId !== "string") {
@@ -151,6 +163,9 @@ export default function VehicleDetailPage() {
                     src={vehicle.imageUrl}
                     alt={`${vehicle.brand} ${vehicle.model}`}
                     className="w-full h-64 sm:h-80 object-cover rounded-xl"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 )}
 
