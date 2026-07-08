@@ -98,7 +98,7 @@ function VerifyOtpForm() {
     [setValue],
   );
 
-  const onSubmit = async (data: OtpFormData) => {
+  const onSubmit = useCallback(async (data: OtpFormData) => {
     if (!email) {
       setError("Email is required. Please go back and register again.");
       return;
@@ -119,7 +119,7 @@ function VerifyOtpForm() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [email, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
