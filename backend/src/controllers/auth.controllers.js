@@ -141,11 +141,9 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError('Please enter correct password', 401);
   }
 
-  const accessToken = jwt.sign(
-    { userId: existingUser.id },
-    config.jwtSecret,
-    { expiresIn: config.accessTokenExpiry },
-  );
+  const accessToken = jwt.sign({ userId: existingUser.id }, config.jwtSecret, {
+    expiresIn: config.accessTokenExpiry,
+  });
 
   const refreshToken = jwt.sign(
     { userId: existingUser.id },
@@ -156,7 +154,7 @@ const login = asyncHandler(async (req, res) => {
   res.cookie('token', refreshToken, {
     httpOnly: true,
     secure: false,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 
@@ -192,7 +190,7 @@ const logOut = asyncHandler(async (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: false,
-    sameSite: 'strict',
+    sameSite: 'lax',
   });
 
   return res.status(200).json({
@@ -221,7 +219,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
   res.cookie('token', refreshTokenNew, {
     httpOnly: true,
     secure: false,
-    sameSite: 'strict',
+    sameSite: 'lax',
     maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 
@@ -231,4 +229,48 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
   });
 });
 
-export { register, login, profile, logOut, handleRefreshToken, verifyOtp };
+const editProfile = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { mobileNumber, state, district, pincode } = req.body;
+
+  if (!mobileNumber || !state || !district || !pincode) {
+    throw new AppError('All fields are required', 400);
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      mobileNumber,
+      state,
+      district,
+      pincode,
+      isProfileCompleted: true,
+    },
+    select: {
+      id: true,
+      userName: true,
+      email: true,
+      mobileNumber: true,
+      state: true,
+      district: true,
+      pincode: true,
+      isProfileCompleted: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return res
+    .status(200)
+    .json({ message: 'Profile updated successfully', user: updatedUser });
+});
+
+export {
+  register,
+  login,
+  profile,
+  logOut,
+  handleRefreshToken,
+  verifyOtp,
+  editProfile,
+};

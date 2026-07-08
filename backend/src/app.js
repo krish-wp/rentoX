@@ -17,7 +17,7 @@ const app = express();
 
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10kb' }));
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
 app.use(helmet());
@@ -27,7 +27,7 @@ import authRouter from './routes/auth.routes.js';
 import vehicleRouter from './routes/vehicle.routes.js';
 import requestRouter from './routes/request.routes.js';
 
-app.use('/api/v1/auth', authLimiter, authRouter);
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/vehicles', vehicleLimiter, vehicleRouter);
 app.use('/api/v1/rental-requests', requestLimiter, requestRouter);
 

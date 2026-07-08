@@ -15,7 +15,7 @@ const globalLimiter = limitCreator(
 );
 const authLimiter = limitCreator(
   15 * 60 * 1000,
-  10,
+  50,
   'Too many attempts from this IP, please try again after 15 minutes',
 );
 const vehicleLimiter = limitCreator(
