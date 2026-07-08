@@ -5,12 +5,14 @@ import {
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  myVehicles,
 } from '../controllers/vehicle.controller.js';
 import authMiddleware from '../middleware/jwt.js';
 
 const router = Router();
 
 router.get('/', authMiddleware, getAllVehicles);
+router.get('/mine', authMiddleware, myVehicles);
 router.get('/:id', authMiddleware, getVehicleById);
 router.post('/', authMiddleware, createVehicle);
 router.put('/:id', authMiddleware, updateVehicle);
