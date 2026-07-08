@@ -260,10 +260,29 @@ const deleteVehicle = asyncHandler(async (req, res) => {
   });
 });
 
+const myVehicles = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const vehicles = await prisma.vehicle.findMany({
+    where: {
+      ownerId: userId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return res.status(200).json({
+    message: 'fetched all the vehicles of owner',
+    vehicles,
+  });
+});
+
 export {
   getAllVehicles,
   getVehicleById,
   createVehicle,
   updateVehicle,
   deleteVehicle,
+  myVehicles,
 };
