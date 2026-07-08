@@ -68,7 +68,7 @@ api.interceptors.response.use(
         return data.accessToken as string;
       } catch {
         setAccessToken(null);
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth/")) {
           window.location.href = "/auth/login";
         }
         throw new Error("Token refresh failed");
