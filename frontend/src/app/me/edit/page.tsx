@@ -13,13 +13,20 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
+import { INDIAN_STATES, DISTRICTS_BY_STATE } from "@/lib/constants";
 
 const profileSchema = z.object({
-  mobileNumber: z.string().regex(/^\+?\d{10,15}$/, "Invalid phone number").or(z.literal("")),
-  state: z.string().max(100, "State too long").or(z.literal("")),
-  district: z.string().max(100, "District too long").or(z.literal("")),
-  pincode: z.string().regex(/^\d{6}$/, "Pincode must be 6 digits").or(z.literal("")),
-});
+  mobileNumber: z.string().regex(/^\+?\d{10,13}$/, "Enter a valid phone number (10-13 digits)").or(z.literal("")),
+  state: z.string().optional(),
+  district: z.string().optional(),
+  pincode: z.string().regex(/^\d{6}$/, "Pincode must be exactly 6 digits").or(z.literal("")),
+}).refine(
+  (data) => !data.district || data.state,
+  { message: "State is required when district is selected", path: ["state"] }
+).refine(
+  (data) => !data.state || !data.district || (DISTRICTS_BY_STATE[data.state]?.includes(data.district) ?? false),
+  { message: "District does not belong to selected state", path: ["district"] }
+);
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -42,11 +49,15 @@ export default function EditProfilePage() {
   const {
     register,
     handleSubmit,
+    watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
   });
+
+  const selectedState = watch("state");
 
   useEffect(() => {
     if (user) {
@@ -58,6 +69,29 @@ export default function EditProfilePage() {
       });
     }
   }, [user, reset]);
+
+  // Clear district when state changes (but not on initial load)
+  useEffect(() => {
+    if (selectedState && selectedState !== user?.state) {
+      setValue("district", "");
+    }
+  }, [selectedState, user?.state, setValue]);
+
+  const availableDistricts = selectedState ? DISTRICTS_BY_STATE[selectedState] || [] : [];
+
+  const handlePhoneInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    let value = target.value.replace(/[^+\d]/g, "");
+    if (value.includes("+")) {
+      value = "+" + value.replace(/\+/g, "");
+    }
+    target.value = value;
+  };
+
+  const handlePincodeInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    target.value = target.value.replace(/\D/g, "").slice(0, 6);
+  };
 
   const onSubmit = async (data: ProfileFormData) => {
     setError("");
@@ -79,6 +113,17 @@ export default function EditProfilePage() {
       setIsSubmitting(false);
     }
   };
+
+  if (!user) {
+    return (
+      <ProtectedRoute>
+        <Navbar />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <p className="text-gray-500">Loading profile...</p>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -113,45 +158,62 @@ export default function EditProfilePage() {
                     id="mobileNumber"
                     type="tel"
                     placeholder="+91 98765 43210"
+                    maxLength={13}
+                    inputMode="numeric"
+                    onInput={handlePhoneInput}
                     {...register("mobileNumber")}
                   />
                   {errors.mobileNumber && (
                     <p className="text-sm text-red-500">{errors.mobileNumber.message}</p>
                   )}
                 </div>
+
                 <div className="space-y-1">
                   <Label htmlFor="state">State</Label>
-                  <Input
+                  <select
                     id="state"
-                    placeholder="Maharashtra"
+                    className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm"
                     {...register("state")}
-                  />
-                  {errors.state && (
-                    <p className="text-sm text-red-500">{errors.state.message}</p>
-                  )}
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
                 </div>
+
                 <div className="space-y-1">
                   <Label htmlFor="district">District</Label>
-                  <Input
+                  <select
                     id="district"
-                    placeholder="Mumbai"
+                    className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm"
+                    disabled={!selectedState}
                     {...register("district")}
-                  />
-                  {errors.district && (
-                    <p className="text-sm text-red-500">{errors.district.message}</p>
-                  )}
+                  >
+                    <option value="">
+                      {selectedState ? "Select District" : "Select state first"}
+                    </option>
+                    {availableDistricts.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
+
                 <div className="space-y-1">
                   <Label htmlFor="pincode">Pincode</Label>
                   <Input
                     id="pincode"
                     placeholder="400001"
+                    maxLength={6}
+                    inputMode="numeric"
+                    onInput={handlePincodeInput}
                     {...register("pincode")}
                   />
                   {errors.pincode && (
                     <p className="text-sm text-red-500">{errors.pincode.message}</p>
                   )}
                 </div>
+
                 <div className="flex gap-2">
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Saving..." : "Save Changes"}
