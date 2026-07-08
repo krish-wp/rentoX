@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,16 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createVehicle } from "@/services/vehicle.service";
-
-const VEHICLE_TYPES = ["Car", "Bike", "SUV", "Van", "Truck", "Auto"];
+import { SERVICEABLE_CITIES, VEHICLE_BRANDS, VEHICLE_TYPES } from "@/lib/constants";
 
 const vehicleSchema = z.object({
-  brand: z.string().min(1, "Brand is required").max(50, "Brand too long"),
-  model: z.string().min(1, "Model is required").max(50, "Model too long"),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
   type: z.string().min(1, "Type is required"),
-  plateNumber: z.string().min(1, "Plate number is required").max(20, "Plate number too long"),
-  pricePerDay: z.coerce.number().min(1, "Price must be at least ₹1"),
-  location: z.string().min(1, "Location is required").max(100, "Location too long"),
+  plateNumber: z
+    .string()
+    .regex(/^[A-Z]{2}\s?\d{2}\s?[A-Z]{2}\s?\d{4}$/, "Format: MH 01 AB 1234"),
+  pricePerDay: z.number({ message: "Price must be a number" }).min(100, "Minimum ₹100/day").max(100000, "Maximum ₹1,00,000/day"),
+  location: z.string().min(1, "Location is required"),
   description: z.string().max(500, "Description too long").optional(),
   imageUrl: z.string().url("Must be a valid URL").or(z.literal("")).optional(),
 });
@@ -37,6 +38,8 @@ interface ApiError {
   };
 }
 
+const selectClass = "flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm";
+
 export default function AddVehiclePage() {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -45,10 +48,36 @@ export default function AddVehiclePage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
   });
+
+  const selectedBrand = watch("brand");
+
+  const availableModels = useMemo(() => {
+    return selectedBrand ? VEHICLE_BRANDS[selectedBrand] || [] : [];
+  }, [selectedBrand]);
+
+  const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const brand = e.target.value;
+    setValue("brand", brand, { shouldValidate: true });
+    setValue("model", "", { shouldValidate: true });
+  };
+
+  const handlePlateInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    let value = target.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (value.length > 10) value = value.slice(0, 10);
+    // Format: XX 00 XX 0000
+    let formatted = value;
+    if (value.length > 4) formatted = value.slice(0, 2) + " " + value.slice(2, 4) + " " + value.slice(4);
+    else if (value.length > 2) formatted = value.slice(0, 2) + " " + value.slice(2);
+    if (value.length > 6) formatted = value.slice(0, 2) + " " + value.slice(2, 4) + " " + value.slice(4, 6) + " " + value.slice(6);
+    target.value = formatted;
+  };
 
   const onSubmit = async (data: VehicleFormData) => {
     setError("");
@@ -93,12 +122,27 @@ export default function AddVehiclePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="brand">Brand</Label>
-                    <Input id="brand" placeholder="Toyota" {...register("brand")} />
+                    <select id="brand" className={selectClass} onChange={handleBrandChange} value={selectedBrand || ""}>
+                      <option value="">Select brand</option>
+                      {Object.keys(VEHICLE_BRANDS).map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
                     {errors.brand && <p className="text-sm text-red-500">{errors.brand.message}</p>}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="model">Model</Label>
-                    <Input id="model" placeholder="Innova" {...register("model")} />
+                    <select
+                      id="model"
+                      className={selectClass}
+                      disabled={!selectedBrand}
+                      {...register("model")}
+                    >
+                      <option value="">{selectedBrand ? "Select model" : "Select brand first"}</option>
+                      {availableModels.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
                     {errors.model && <p className="text-sm text-red-500">{errors.model.message}</p>}
                   </div>
                 </div>
@@ -106,11 +150,7 @@ export default function AddVehiclePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="type">Type</Label>
-                    <select
-                      id="type"
-                      className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm"
-                      {...register("type")}
-                    >
+                    <select id="type" className={selectClass} {...register("type")}>
                       <option value="">Select type</option>
                       {VEHICLE_TYPES.map((t) => (
                         <option key={t} value={t}>{t}</option>
@@ -120,7 +160,13 @@ export default function AddVehiclePage() {
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="plateNumber">Plate Number</Label>
-                    <Input id="plateNumber" placeholder="MH 01 AB 1234" {...register("plateNumber")} />
+                    <Input
+                      id="plateNumber"
+                      placeholder="MH 01 AB 1234"
+                      maxLength={13}
+                      onInput={handlePlateInput}
+                      {...register("plateNumber")}
+                    />
                     {errors.plateNumber && <p className="text-sm text-red-500">{errors.plateNumber.message}</p>}
                   </div>
                 </div>
@@ -128,12 +174,25 @@ export default function AddVehiclePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <Label htmlFor="pricePerDay">Price per Day (₹)</Label>
-                    <Input id="pricePerDay" type="number" placeholder="1500" {...register("pricePerDay")} />
+                    <Input
+                      id="pricePerDay"
+                      type="number"
+                      min={100}
+                      max={100000}
+                      step={50}
+                      placeholder="1500"
+                      {...register("pricePerDay", { valueAsNumber: true })}
+                    />
                     {errors.pricePerDay && <p className="text-sm text-red-500">{errors.pricePerDay.message}</p>}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="location">Location</Label>
-                    <Input id="location" placeholder="Mumbai" {...register("location")} />
+                    <select id="location" className={selectClass} {...register("location")}>
+                      <option value="">Select city</option>
+                      {SERVICEABLE_CITIES.map((city) => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
                     {errors.location && <p className="text-sm text-red-500">{errors.location.message}</p>}
                   </div>
                 </div>
