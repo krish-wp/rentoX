@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import ProtectedRoute from "@/components/protected-route";
 import Navbar from "@/components/navbar";
 import { Button } from "@/components/ui/button";
@@ -28,26 +28,26 @@ export default function BookingsPage() {
   const [actionError, setActionError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const fetchRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const [sent, received] = await Promise.all([getSentRequests(), getReceivedRequests()]);
-      setSentRequests(sent.data);
-      setReceivedRequests(received.data);
-    } catch {
-      setError("Failed to load bookings.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
-      await fetchRequests();
+      setIsLoading(true);
+      setError("");
+      try {
+        const [sent, received] = await Promise.all([getSentRequests(), getReceivedRequests()]);
+        if (!cancelled) {
+          setSentRequests(sent.data);
+          setReceivedRequests(received.data);
+        }
+      } catch {
+        if (!cancelled) setError("Failed to load bookings.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
     };
     load();
-  }, [fetchRequests]);
+    return () => { cancelled = true; };
+  }, []);
 
   const handleStatusUpdate = async (requestId: string, status: "ACCEPTED" | "REJECTED") => {
     if (processingId) return;
@@ -119,7 +119,7 @@ export default function BookingsPage() {
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600" role="alert">
               {error}
             </div>
           )}
