@@ -26,9 +26,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { user } = await authService.getProfile();
       setUser(user);
-    } catch {
-      setUser(null);
-      setAccessToken(null);
+    } catch (err) {
+      const axiosErr = err as { response?: { status?: number } };
+      if (axiosErr?.response?.status === 401) {
+        setUser(null);
+        setAccessToken(null);
+      }
+      // For network errors, 500s, etc. — keep existing state
     } finally {
       setIsLoading(false);
     }
