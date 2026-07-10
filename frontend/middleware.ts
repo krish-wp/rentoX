@@ -7,7 +7,7 @@ export function middleware(request: NextRequest) {
   const refreshToken = request.cookies.get("token");
   const { pathname } = request.nextUrl;
 
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
+  const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   if (isProtected && !refreshToken) {
     const loginUrl = new URL("/auth/login", request.url);
