@@ -8,12 +8,12 @@ export const getMyVehicles = async (): Promise<{ vehicles: Vehicle[] }> => {
 
 export const getVehicles = async (filters: VehicleFilters = {}): Promise<PaginatedVehicles> => {
   const params = new URLSearchParams();
-  if (filters.page) params.set("page", String(filters.page));
-  if (filters.limit) params.set("limit", String(filters.limit));
+  if (filters.page !== undefined) params.set("page", String(filters.page));
+  if (filters.limit !== undefined) params.set("limit", String(filters.limit));
   if (filters.type) params.set("type", filters.type);
   if (filters.location) params.set("location", filters.location);
-  if (filters.minPrice) params.set("minPrice", String(filters.minPrice));
-  if (filters.maxPrice) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
+  if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
 
   const response = await api.get<PaginatedVehicles>(`/vehicles?${params.toString()}`);
   return response.data;

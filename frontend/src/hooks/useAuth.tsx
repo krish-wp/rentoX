@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import type { User } from "@/types/auth";
 import { setAccessToken } from "@/lib/api";
 import * as authService from "@/services/auth.service";
+import axios from "axios";
 
 interface AuthContextType {
   user: User | null;
@@ -27,57 +28,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user } = await authService.getProfile();
       setUser(user);
     } catch (err) {
-      const axiosErr = err as { response?: { status?: number } };
-      if (axiosErr?.response?.status === 401) {
-        setUser(null);
+      setUser(null);
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
         setAccessToken(null);
       }
-      // For network errors, 500s, etc. — keep existing state
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const loadUser = async () => {
-      await fetchUser();
-    };
-    loadUser();
-  }, [fetchUser]);
+    let cancelled = false;
+    authService.getProfile()
+      .then(({ user }) => { if (!cancelled) setUser(user); })
+      .catch((err) => {
+        if (cancelled) return;
+        setUser(null);
+        if (axios.isAxiosError(err) && err.response?.status === 401) {
+          setAccessToken(null);
+        }
+      })
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const data = await authService.login({ email, password });
     setAccessToken(data.accessToken ?? null);
-    await fetchUser();
-  };
-
-  const register = async (username: string, email: string, password: string) => {
-    await authService.register({ username, email, password });
-  };
-
-  const logout = async () => {
     try {
-      await authService.logout();
+      await fetchUser();
     } catch {
-      // Server may be down — clear client state anyway
-    } finally {
+      setAccessToken(null);
+      throw new Error("Login succeeded but failed to load profile. Please try again.");
+    }
+  }, [fetchUser]);
+
+  const register = useCallback(async (username: string, email: string, password: string) => {
+    await authService.register({ username, email, password });
+  }, []);
+
+  const logout = useCallback(async () => {
+    try { await authService.logout(); } catch { /* server may be down */ }
+    finally {
       setAccessToken(null);
       setUser(null);
     }
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    register,
+    logout,
+    fetchUser,
+  }), [user, isLoading, login, register, logout, fetchUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        register,
-        logout,
-        fetchUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

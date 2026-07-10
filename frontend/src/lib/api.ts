@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -33,12 +33,23 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.message === "Please complete your profile first"
+    ) {
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/me/edit")) {
+        window.location.href = "/me/edit";
+      }
+      return Promise.reject(error);
+    }
+
     if (!(error.response?.status === 401 && !originalRequest._retry)) {
       return Promise.reject(error);
     }
 
+    const requestUrl = originalRequest.url || "";
     const isPublicEndpoint = PUBLIC_AUTH_ENDPOINTS.some((endpoint) =>
-      originalRequest.url?.includes(endpoint),
+      requestUrl.startsWith(endpoint) || requestUrl.endsWith(endpoint),
     );
 
     if (isPublicEndpoint) {
