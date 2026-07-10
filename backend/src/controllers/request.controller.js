@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/appError.js';
+import sendEmail from '../services/email.service.js';
 
 // Send a rental request
 export const sendRequest = asyncHandler(async (req, res, next) => {
@@ -25,6 +26,16 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
 
   const vehicle = await prisma.vehicle.findUnique({
     where: { id: vehicleId },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          userName: true,
+          email: true,
+          mobileNumber: true,
+        },
+      },
+    },
   });
 
   if (!vehicle) {
@@ -44,6 +55,18 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
       message,
     },
   });
+
+  // send email..l to vehicle owner about new rental request with direct link to view the request in the app
+  console.log(
+    'Sending email to vehicle owner about new rental request',
+    vehicle.owner.email,
+  );
+
+  await sendEmail(
+    vehicle.owner.email,
+    'New Rental Request',
+    `You have received a new rental request for your vehicle ${vehicle.brand} ${vehicle.model}. Please log in to your account to view and respond to the request.`,
+  );
 
   res.status(201).json({
     success: true,

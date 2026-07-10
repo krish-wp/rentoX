@@ -8,11 +8,12 @@ import {
   deleteRequest,
 } from '../controllers/request.controller.js';
 import authMiddleware from '../middleware/jwt.js';
+import requireCompleteProfile from '../middleware/profileComplete.js';
 
 const router = Router();
 
 // Send a rental request
-router.post('/sendrequest', authMiddleware, sendRequest);
+router.post('/sendrequest', authMiddleware, requireCompleteProfile, sendRequest);
 
 // Get all requests for a specific vehicle (owner only)
 router.get('/vehicle/:vehicleId', authMiddleware, getAllRequestsForVehicle);
