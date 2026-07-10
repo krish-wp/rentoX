@@ -14,8 +14,27 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "rentoX - Vehicle Rental Platform",
+  title: {
+    default: "rentoX - Vehicle Rental Platform",
+    template: "%s | rentoX",
+  },
   description: "Rent vehicles easily with rentoX. Browse, book, and manage your vehicle rentals.",
+  openGraph: {
+    title: "rentoX - Vehicle Rental Platform",
+    description: "Rent vehicles easily with rentoX. Browse, book, and manage your vehicle rentals.",
+    type: "website",
+    locale: "en_IN",
+    siteName: "rentoX",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "rentoX - Vehicle Rental Platform",
+    description: "Rent vehicles easily with rentoX. Browse, book, and manage your vehicle rentals.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
