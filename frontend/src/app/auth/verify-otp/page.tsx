@@ -1,39 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 import { verifyOtp } from "@/services/auth.service";
-
-const otpSchema = z.object({
-  otp: z
-    .string()
-    .length(6, "OTP must be 6 digits")
-    .regex(/^\d+$/, "OTP must contain only numbers"),
-});
-
-type OtpFormData = z.infer<typeof otpSchema>;
-
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-}
+import { getApiErrorMessage } from "@/types/api";
+import { otpSchema, type OtpFormData } from "@/lib/form-utils";
 
 function VerifyOtpForm() {
   const router = useRouter();
@@ -41,111 +20,78 @@ function VerifyOtpForm() {
   const email = searchParams.get("email") || "";
 
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<string>("");
+  const otpRef = useRef(["", "", "", "", "", ""]);
+
+  useEffect(() => { otpRef.current = otp; });
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<OtpFormData>({
+  const { handleSubmit, setValue, formState: { errors } } = useForm<OtpFormData>({
     resolver: zodResolver(otpSchema),
   });
 
-  const emailError = !email ? "Email parameter is missing. Please go back and register again." : "";
+  const handleOtpChange = useCallback((index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    setOtp((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      setValue("otp", next.join(""), { shouldValidate: true });
+      return next;
+    });
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  }, [setValue]);
 
-  const handleOtpChange = useCallback(
-    (index: number, value: string) => {
-      if (value.length > 1) {
-        value = value.slice(-1);
-      }
+  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otpRef.current[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  }, []);
 
-      const newOtp = [...otp];
-      newOtp[index] = value;
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (pasted.length > 0) {
+      const newOtp = pasted.split("").concat(Array(6).fill("")).slice(0, 6);
       setOtp(newOtp);
-
-      setValue("otp", newOtp.join(""), { shouldValidate: true });
-
-      if (value && index < 5) {
-        const nextInput = document.getElementById(`otp-${index + 1}`);
-        nextInput?.focus();
-      }
-    },
-    [otp, setValue],
-  );
-
-  const handleKeyDown = useCallback(
-    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Backspace" && !otp[index] && index > 0) {
-        const prevInput = document.getElementById(`otp-${index - 1}`);
-        prevInput?.focus();
-      }
-    },
-    [otp],
-  );
-
-  const handlePaste = useCallback(
-    (e: React.ClipboardEvent) => {
-      e.preventDefault();
-      const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-      if (pastedData.length > 0) {
-        const newOtp = pastedData.split("").concat(Array(6).fill("")).slice(0, 6);
-        setOtp(newOtp);
-        setValue("otp", pastedData, { shouldValidate: true });
-      }
-    },
-    [setValue],
-  );
+      setValue("otp", pasted, { shouldValidate: true });
+    }
+  }, [setValue]);
 
   const onSubmit = useCallback(async (data: OtpFormData) => {
-    if (!email) {
-      setError("Email is required. Please go back and register again.");
-      return;
-    }
-
-    setError("");
-    setSuccess("");
-    setIsSubmitting(true);
+    if (!email) { setError("Email is required. Please go back and register again."); return; }
+    setError(""); setSuccess(""); setIsSubmitting(true);
     try {
       const response = await verifyOtp({ email, otp: data.otp });
       setSuccess(response.message);
-      setTimeout(() => {
-        router.push("/auth/login");
-      }, 2000);
     } catch (err) {
-      const apiError = err as ApiError;
-      setError(apiError?.response?.data?.message || "OTP verification failed. Please try again.");
+      setError(getApiErrorMessage(err, "OTP verification failed. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
-  }, [email, router]);
+  }, [email]);
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => router.push("/auth/login"), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Verify OTP</CardTitle>
-          <CardDescription>
-            Enter the 6-digit code sent to {email || "your email"}
-          </CardDescription>
+          <CardDescription>Enter the 6-digit code sent to {email || "your email"}</CardDescription>
         </CardHeader>
         <CardContent>
-          {emailError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600" role="alert">
-              {emailError}
-            </div>
-          )}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600" role="alert">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-600" role="status">
-              {success}
-            </div>
-          )}
+          {!email && <Alert variant="error">Email parameter is missing. Please go back and register again.</Alert>}
+          {error && <Alert variant="error">{error}</Alert>}
+          {success && <Alert variant="success">{success}</Alert>}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label className="text-center block">Enter Verification Code</Label>
@@ -168,17 +114,9 @@ function VerifyOtpForm() {
                   />
                 ))}
               </div>
-              {errors.otp && (
-                <p className="text-sm text-red-500 text-center">
-                  {errors.otp.message}
-                </p>
-              )}
+              {errors.otp && <p className="text-sm text-red-500 text-center">{errors.otp.message}</p>}
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || !email}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting || !email}>
               {isSubmitting ? "Verifying..." : "Verify OTP"}
             </Button>
           </form>
@@ -190,13 +128,7 @@ function VerifyOtpForm() {
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <p>Loading...</p>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading...</p></div>}>
       <VerifyOtpForm />
     </Suspense>
   );
