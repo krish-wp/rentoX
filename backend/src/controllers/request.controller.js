@@ -85,11 +85,15 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
     },
   });
 
-  await sendEmail(
-    vehicle.owner.email,
-    'New Rental Request',
-    `You have received a new rental request for your vehicle ${vehicle.brand} ${vehicle.model}. Please log in to your account to view and respond to the request.`,
-  );
+  try {
+    await sendEmail(
+      vehicle.owner.email,
+      'New Rental Request',
+      `You have received a new rental request for your vehicle ${vehicle.brand} ${vehicle.model}. Please log in to your account to view and respond to the request.`,
+    );
+  } catch (emailError) {
+    console.error('Failed to send rental request email:', emailError.message);
+  }
 
   res.status(201).json({
     success: true,

@@ -36,8 +36,6 @@ const register = asyncHandler(async (req, res) => {
 
   const otpEmail = generateOTPhtml(otp);
 
-  await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
-
   const hashedOtp = await bcrypt.hash(otp, config.bcryptSaltRounds);
 
   if (!existingUser) {
@@ -68,6 +66,13 @@ const register = asyncHandler(async (req, res) => {
       email: true,
     },
   });
+
+  try {
+    await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
+  } catch (emailError) {
+    console.error('Failed to send OTP email:', emailError.message);
+    console.log(`[DEV OTP] Email: ${email} | OTP: ${otp}`);
+  }
 
   res.status(201).json({
     message: 'otp sent to your email please verify your account',
