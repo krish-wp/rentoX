@@ -19,6 +19,9 @@ export const metadata: Metadata = {
     template: "%s | rentoX",
   },
   description: "Rent vehicles easily with rentoX. Browse, book, and manage your vehicle rentals.",
+  icons: {
+    icon: "/logo.png",
+  },
   openGraph: {
     title: "rentoX - Vehicle Rental Platform",
     description: "Rent vehicles easily with rentoX. Browse, book, and manage your vehicle rentals.",

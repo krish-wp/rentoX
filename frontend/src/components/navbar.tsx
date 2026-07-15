@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,10 @@ export default function Navbar() {
     <nav aria-label="Main navigation" className="border-b bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 items-center">
-          <Link href="/" className="text-xl font-bold text-primary">rentoX</Link>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.png" alt="rentoX" width={32} height={32} className="rounded" />
+            <span className="text-xl font-bold text-primary">rentoX</span>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden sm:flex items-center gap-4">
