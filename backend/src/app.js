@@ -16,6 +16,10 @@ import {
 
 const app = express();
 
+if (config.isProduction) {
+  app.set('trust proxy', 1);
+}
+
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10kb' }));
 app.use(cors({
