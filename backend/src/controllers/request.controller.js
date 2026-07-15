@@ -85,12 +85,6 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
     },
   });
 
-  // send email..l to vehicle owner about new rental request with direct link to view the request in the app
-  console.log(
-    'Sending email to vehicle owner about new rental request',
-    vehicle.owner.email,
-  );
-
   await sendEmail(
     vehicle.owner.email,
     'New Rental Request',
