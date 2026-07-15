@@ -18,7 +18,11 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
   }
 
   //pls validate that startDate is before endDate
-  if (new Date(startDate) >= new Date(endDate)) {
+
+  const userStart = new Date(startDate);
+  const userEnd = new Date(endDate);
+
+  if (userStart >= userEnd) {
     return next(new AppError('Start date must be before end date', 400));
   }
 
@@ -46,12 +50,37 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
     return next(new AppError('You cannot request your own vehicle', 400));
   }
 
+  const conflict = await prisma.rentalRequest.findFirst({
+    where: {
+      vehicleId,
+      status: 'ACCEPTED',
+      startDate: {
+        lte: userEnd,
+      },
+      endDate: {
+        gte: userStart,
+      },
+    },
+  });
+
+  console.log('conflicting', conflict);
+
+  if (conflict != null) {
+    const start = conflict.startDate.toISOString().split('T')[0];
+    const end = conflict.endDate.toISOString().split('T')[0];
+
+    throw new AppError(
+      `The vehicle is already booked from ${start} to ${end}.`,
+      400,
+    );
+  }
+
   const request = await prisma.rentalRequest.create({
     data: {
       senderId,
       vehicleId,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: userStart,
+      endDate: userEnd,
       message,
     },
   });
