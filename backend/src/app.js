@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import openapi from '../../docs/openapi.json' with { type: 'json' };
 import morgan from 'morgan';
 import helmet from 'helmet';
+import config from './config/constants.js';
 import {
   authLimiter,
   globalLimiter,
@@ -15,9 +16,12 @@ import {
 
 const app = express();
 
-app.use(morgan('dev'));
+app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10kb' }));
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: config.isProduction ? config.frontendUrl : true,
+  credentials: true,
+}));
 app.use(cookieParser());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
 app.use(helmet());

@@ -10,13 +10,19 @@ dotenv.config();
 if (
   !config.databaseUrl ||
   !config.jwtSecret ||
-  !config.jwtRefreshSecret ||
+  !config.jwtRefreshSecret
+) {
+  console.error('Missing required environment variables (DATABASE_URL, JWT_SECRET, JWT_REFRESH_SECRET).');
+  process.exit(1);
+}
+
+if (config.isProduction && (
   !config.googleClientId ||
   !config.googleClientSecret ||
   !config.googleRefreshToken ||
   !config.googleUser
-) {
-  console.error('Missing required environment variables.');
+)) {
+  console.error('Missing Google OAuth environment variables (required in production).');
   process.exit(1);
 }
 

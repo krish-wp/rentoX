@@ -153,8 +153,8 @@ const login = asyncHandler(async (req, res) => {
 
   res.cookie('token', refreshToken, {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
+    secure: config.isProduction,
+    sameSite: config.isProduction ? 'none' : 'lax',
     maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 
@@ -189,8 +189,8 @@ const profile = asyncHandler(async (req, res) => {
 const logOut = asyncHandler(async (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
+    secure: config.isProduction,
+    sameSite: config.isProduction ? 'none' : 'lax',
   });
 
   return res.status(200).json({
@@ -218,8 +218,8 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
   res.cookie('token', refreshTokenNew, {
     httpOnly: true,
-    secure: false,
-    sameSite: 'lax',
+    secure: config.isProduction,
+    sameSite: config.isProduction ? 'none' : 'lax',
     maxAge: config.cookieMaxAgeDays * 24 * 3600 * 1000,
   });
 

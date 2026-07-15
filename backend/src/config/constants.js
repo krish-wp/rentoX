@@ -1,6 +1,14 @@
+const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = !isProduction;
+
 const config = {
+  isProduction,
+  isDevelopment,
+
   port: parseInt(process.env.PORT) || 5000,
   databaseUrl: process.env.DATABASE_URL,
+
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
 
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
