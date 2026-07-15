@@ -4,7 +4,7 @@ A full-stack vehicle rental marketplace built for the Indian market. Users can r
 
 ## Live Demo
 
-🔗 [Live URL]() — _Coming soon_
+🔗 [Frontend](https://rento-x.vercel.app) | [Backend API](https://backend-production-07ce.up.railway.app/api-docs)
 
 ## Screenshots
 
