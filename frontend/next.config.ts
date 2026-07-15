@@ -31,12 +31,16 @@ const securityHeaders = [
   },
 ];
 
+const backendUrl = process.env.NODE_ENV === "production"
+  ? "https://backend-production-07ce.up.railway.app"
+  : "http://localhost:5000";
+
 const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: "https://backend-production-07ce.up.railway.app/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },
