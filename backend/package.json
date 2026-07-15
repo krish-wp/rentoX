@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
-    "build": "echo 'Build phase - no actions needed for Express'",
+    "build": "npx prisma generate",
+    "start": "npx prisma migrate deploy && node src/server.js",
     "test": "echo 'Test scripts not yet configured'"
   },
   "keywords": [],
