@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert } from "@/components/ui/alert";
 import { VehicleCard } from "@/components/ui/vehicle-card";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { getVehicles } from "@/services/vehicle.service";
 import { SERVICEABLE_CITIES, VEHICLE_TYPES } from "@/lib/constants";
 import type { Vehicle } from "@/types/vehicle";
@@ -109,30 +110,30 @@ function VehiclesContent() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold mb-6">Browse Vehicles</h1>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] mb-8">Browse Vehicles</h1>
 
-      <form onSubmit={handleSearch} className="bg-white p-4 rounded-lg shadow-sm mb-6">
+      <form onSubmit={handleSearch} className="bg-card border border-border/60 p-5 rounded-xl mb-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
-            <select id="type" value={type} onChange={(e) => setType(e.target.value)} className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm">
-              <option value="">All Types</option>
-              {VEHICLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            <NativeSelect id="type" value={type} onChange={(e) => setType(e.target.value)} className="w-full">
+              <NativeSelectOption value="">All Types</NativeSelectOption>
+              {VEHICLE_TYPES.map((t) => <NativeSelectOption key={t} value={t}>{t}</NativeSelectOption>)}
+            </NativeSelect>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="location">Location</Label>
-            <select id="location" value={location} onChange={(e) => setLocation(e.target.value)} className="flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm">
-              <option value="">All Cities</option>
-              {SERVICEABLE_CITIES.map((city) => <option key={city} value={city}>{city}</option>)}
-            </select>
+            <NativeSelect id="location" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full">
+              <NativeSelectOption value="">All Cities</NativeSelectOption>
+              {SERVICEABLE_CITIES.map((city) => <NativeSelectOption key={city} value={city}>{city}</NativeSelectOption>)}
+            </NativeSelect>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="minPrice">Min Price (₹)</Label>
             <Input id="minPrice" type="number" min={0} max={100000} step={50} placeholder="100" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="maxPrice">Max Price (₹)</Label>
             <Input id="maxPrice" type="number" min={0} max={100000} step={50} placeholder="100000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
           </div>
@@ -146,9 +147,9 @@ function VehiclesContent() {
       {error && <Alert variant="error">{error}</Alert>}
 
       {isLoading ? (
-        <div className="text-center py-12 text-gray-500" role="status" aria-live="polite">Loading vehicles...</div>
+        <div className="text-center py-12 text-muted-foreground" role="status" aria-live="polite">Loading vehicles...</div>
       ) : vehicles.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">No vehicles found matching your filters.</div>
+        <div className="text-center py-12 text-muted-foreground">No vehicles found matching your filters.</div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -158,7 +159,7 @@ function VehiclesContent() {
           {pagination.totalPages > 1 && (
             <nav aria-label="Pagination" className="flex justify-center gap-2 mt-8">
               <Button variant="outline" disabled={pagination.page <= 1} onClick={() => loadVehicles(pagination.page - 1)}>Previous</Button>
-              <span className="flex items-center px-4 text-sm text-gray-600">Page {pagination.page} of {pagination.totalPages}</span>
+              <span className="flex items-center px-4 text-sm text-muted-foreground">Page {pagination.page} of {pagination.totalPages}</span>
               <Button variant="outline" disabled={pagination.page >= pagination.totalPages} onClick={() => loadVehicles(pagination.page + 1)}>Next</Button>
             </nav>
           )}
@@ -169,5 +170,5 @@ function VehiclesContent() {
 }
 
 export default function VehiclesPage() {
-  return <Suspense fallback={<div className="text-center py-12 text-gray-500" role="status" aria-live="polite">Loading...</div>}><VehiclesContent /></Suspense>;
+  return <Suspense fallback={<div className="text-center py-12 text-muted-foreground" role="status" aria-live="polite"><div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mb-2" /><p>Loading...</p></div>}><VehiclesContent /></Suspense>;
 }

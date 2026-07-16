@@ -82,13 +82,13 @@ function VerifyOtpForm() {
   }, [success, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Verify OTP</CardTitle>
+        <CardHeader className="text-center pb-0">
+          <CardTitle className="text-xl font-bold tracking-[-0.02em]">Verify OTP</CardTitle>
           <CardDescription>Enter the 6-digit code sent to {email || "your email"}</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {!email && <Alert variant="error">Email parameter is missing. Please go back and register again.</Alert>}
           {error && <Alert variant="error">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
@@ -114,7 +114,7 @@ function VerifyOtpForm() {
                   />
                 ))}
               </div>
-              {errors.otp && <p className="text-sm text-red-500 text-center">{errors.otp.message}</p>}
+              {errors.otp && <p className="text-sm text-destructive text-center">{errors.otp.message}</p>}
             </div>
             <Button type="submit" className="w-full" disabled={isSubmitting || !email}>
               {isSubmitting ? "Verifying..." : "Verify OTP"}
@@ -128,7 +128,7 @@ function VerifyOtpForm() {
 
 export default function VerifyOtpPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-gray-50"><p>Loading...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background" role="status" aria-live="polite"><div className="text-center"><div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /><p className="mt-4 text-sm text-muted-foreground">Loading...</p></div></div>}>
       <VerifyOtpForm />
     </Suspense>
   );

@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/lib/api";
 import { INDIAN_STATES, DISTRICTS_BY_STATE } from "@/lib/constants";
-import { profileSchema, type ProfileFormData, SELECT_CLASS } from "@/lib/form-utils";
+import { profileSchema, type ProfileFormData } from "@/lib/form-utils";
 import { getApiErrorMessage } from "@/types/api";
 
 export default function EditProfilePage() {
@@ -24,6 +25,12 @@ export default function EditProfilePage() {
 
   const { register, handleSubmit, watch, reset, setValue, control, formState: { errors } } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      mobileNumber: "",
+      state: "",
+      district: "",
+      pincode: "",
+    },
   });
 
   const selectedState = watch("state");
@@ -65,23 +72,23 @@ export default function EditProfilePage() {
     }
   };
 
-  if (!user) return <div className="flex items-center justify-center py-12"><p className="text-gray-500" role="status" aria-live="polite">Loading profile...</p></div>;
+  if (!user) return <div className="flex items-center justify-center py-12"><p className="text-muted-foreground" role="status" aria-live="polite">Loading profile...</p></div>;
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto py-12 px-4 sm:px-6">
       <Card>
         <CardHeader><CardTitle>Edit Profile</CardTitle></CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {error && <Alert variant="error">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
 
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg text-sm space-y-1">
-            <p><span className="text-gray-500">Username:</span> {user.userName}</p>
-            <p><span className="text-gray-500">Email:</span> {user.email}</p>
+          <div className="mb-5 p-4 bg-muted rounded-lg text-sm space-y-2">
+            <p><span className="text-muted-foreground">Username:</span> {user.userName}</p>
+            <p><span className="text-muted-foreground">Email:</span> {user.email}</p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
               <Label htmlFor="mobileNumber">Phone Number</Label>
               <Controller
                 name="mobileNumber"
@@ -102,26 +109,26 @@ export default function EditProfilePage() {
                   />
                 )}
               />
-              {errors.mobileNumber && <p className="text-sm text-red-500" role="alert">{errors.mobileNumber.message}</p>}
+              {errors.mobileNumber && <p className="text-sm text-destructive" role="alert">{errors.mobileNumber.message}</p>}
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label htmlFor="state">State</Label>
-              <select id="state" className={SELECT_CLASS} {...register("state")}>
-                <option value="">Select State</option>
-                {INDIAN_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              <NativeSelect id="state" {...register("state")} className="w-full">
+                <NativeSelectOption value="">Select State</NativeSelectOption>
+                {INDIAN_STATES.map((s) => <NativeSelectOption key={s} value={s}>{s}</NativeSelectOption>)}
+              </NativeSelect>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label htmlFor="district">District</Label>
-              <select id="district" className={SELECT_CLASS} disabled={!selectedState} {...register("district")}>
-                <option value="">{selectedState ? "Select District" : "Select state first"}</option>
-                {availableDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
-              </select>
+              <NativeSelect id="district" disabled={!selectedState} {...register("district")} className="w-full">
+                <NativeSelectOption value="">{selectedState ? "Select District" : "Select state first"}</NativeSelectOption>
+                {availableDistricts.map((d) => <NativeSelectOption key={d} value={d}>{d}</NativeSelectOption>)}
+              </NativeSelect>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               <Label htmlFor="pincode">Pincode</Label>
               <Controller
                 name="pincode"
@@ -140,10 +147,10 @@ export default function EditProfilePage() {
                   />
                 )}
               />
-              {errors.pincode && <p className="text-sm text-red-500" role="alert">{errors.pincode.message}</p>}
+              {errors.pincode && <p className="text-sm text-destructive" role="alert">{errors.pincode.message}</p>}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3 pt-2">
               <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
               <Button type="button" variant="outline" onClick={() => router.push("/me")}>Cancel</Button>
             </div>
