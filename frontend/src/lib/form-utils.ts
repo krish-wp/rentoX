@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DISTRICTS_BY_STATE } from "@/lib/constants";
-export const SELECT_CLASS = "flex h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm";
+export const SELECT_CLASS = "flex h-9 w-full rounded-lg border border-border/80 bg-transparent px-2.5 py-1 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-40";
 
-export const TEXTAREA_CLASS = "flex w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-base md:text-sm";
+export const TEXTAREA_CLASS = "flex w-full rounded-lg border border-border/80 bg-transparent px-2.5 py-1 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-40";
 
 export function formatPlateNumber(value: string): string {
   const stripped = value.replace(/\s/g, "").toUpperCase();
