@@ -30,8 +30,8 @@ export function FormSelect({
   registration,
 }: FormSelectProps) {
   return (
-    <div className="space-y-1">
-      <label htmlFor={id} className="text-sm font-medium">{label}</label>
+    <div className="space-y-2">
+      <label htmlFor={id} className="text-sm font-medium tracking-[-0.01em] text-foreground">{label}</label>
       <select
         id={id}
         className={SELECT_CLASS}
@@ -45,7 +45,7 @@ export function FormSelect({
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      {error && <p className="text-sm text-red-500" role="alert">{error}</p>}
+      {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
     </div>
   );
 }
