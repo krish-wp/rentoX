@@ -2,39 +2,33 @@ import nodemailer from 'nodemailer';
 import config from '../config/constants.js';
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: config.smtpHost,
+  port: config.smtpPort,
+  secure: true,
   auth: {
-    type: 'OAuth2',
-    user: config.googleUser,
-    clientId: config.googleClientId,
-    clientSecret: config.googleClientSecret,
-    refreshToken: config.googleRefreshToken,
+    user: config.smtpUser,
+    pass: config.smtpPass,
   },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('Error verifying email transporter:', error.message);
-  } else {
-    console.log('Email transporter is ready to send messages');
-  }
 });
 
 const sendEmail = async (to, subject, html) => {
-  if (config.isProduction && !config.googleUser) {
-    console.log(`[EMAIL SKIPPED] To: ${to}, Subject: ${subject}`);
+  if (config.isProduction && (!config.smtpUser || !config.smtpPass)) {
+    console.log(`[EMAIL SKIPPED] SMTP credentials missing`);
     return;
   }
 
   const mailOptions = {
-    from: config.googleUser,
+    from: config.fromEmail,
     to,
     subject,
     html,
   };
-  await transporter.sendMail(mailOptions);
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 export default sendEmail;
