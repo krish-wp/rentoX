@@ -1,37 +1,32 @@
-import nodemailer from 'nodemailer';
 import config from '../config/constants.js';
-
-const transporter = nodemailer.createTransport({
-  host: config.smtpHost,
-  port: config.smtpPort,
-  secure: config.smtpPort === 465,
-  auth: {
-    user: config.smtpUser,
-    pass: config.smtpPass,
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
 
 const sendEmail = async (to, subject, html) => {
   if (!config.smtpUser || !config.smtpPass) {
     throw new Error('SMTP credentials are missing.');
   }
 
-  const mailOptions = {
-    from: config.fromEmail,
-    to,
+  const payload = {
+    sender: { email: config.fromEmail },
+    to: [{ email }],
     subject,
-    html,
+    htmlContent: html,
   };
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
-  } catch (err) {
-    console.error('SMTP Error:', err);
-    throw err;
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': config.smtpPass,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
   }
+
+  console.log('Email sent to:', to);
 };
 
 export default sendEmail;
