@@ -1,13 +1,19 @@
 import config from '../config/constants.js';
 
-const sendEmail = async (to, subject, html) => {
+const sendEmail = async (mail, subject, html) => {
   if (!config.smtpPass) {
-    throw new Error('SMTP credentials are missing.');
+    throw new Error('Brevo API key is missing.');
   }
 
   const payload = {
-    sender: { email: config.fromEmail },
-    to: [{ email }],
+    sender: {
+      email: config.fromEmail,
+    },
+    to: [
+      {
+        email: mail,
+      },
+    ],
     subject,
     htmlContent: html,
   };
@@ -26,7 +32,10 @@ const sendEmail = async (to, subject, html) => {
     throw new Error(`Brevo API error ${res.status}: ${body}`);
   }
 
-  console.log('Email sent to:', to);
+  const data = await res.json();
+  console.log('Email sent:', data);
+
+  return data;
 };
 
 export default sendEmail;
