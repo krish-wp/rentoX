@@ -71,7 +71,9 @@ const register = asyncHandler(async (req, res) => {
     await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
   } catch (emailError) {
     console.error('Failed to send OTP email:', emailError.message);
-    console.log(`[DEV OTP] Email: ${email} | OTP: ${otp}`);
+    if (config.isDevelopment) {
+      console.log(`[DEV OTP] Email: ${email} | OTP: ${otp}`);
+    }
   }
 
   res.status(201).json({
