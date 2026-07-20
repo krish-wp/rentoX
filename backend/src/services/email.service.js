@@ -1,7 +1,7 @@
 import config from '../config/constants.js';
 
 const sendEmail = async (to, subject, html) => {
-  if (!config.smtpUser || !config.smtpPass) {
+  if (!config.smtpPass) {
     throw new Error('SMTP credentials are missing.');
   }
 
