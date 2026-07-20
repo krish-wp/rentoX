@@ -1,11 +1,8 @@
 import express from 'express';
 import app from './app.js';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import config from './config/constants.js';
-
-dotenv.config();
 
 if (
   !config.databaseUrl ||
@@ -23,6 +20,16 @@ if (config.isProduction && (
   !config.googleUser
 )) {
   console.error('Missing Google OAuth environment variables (required in production).');
+  process.exit(1);
+}
+
+if (config.isProduction && (
+  !config.smtpHost ||
+  !config.smtpUser ||
+  !config.smtpPass ||
+  !config.fromEmail
+)) {
+  console.error('Missing SMTP environment variables (SMTP_HOST, SMTP_USER, SMTP_PASS, FROM_EMAIL) required in production.');
   process.exit(1);
 }
 
