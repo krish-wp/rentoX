@@ -24,12 +24,10 @@ if (config.isProduction && (
 }
 
 if (config.isProduction && (
-  !config.smtpHost ||
-  !config.smtpUser ||
   !config.smtpPass ||
   !config.fromEmail
 )) {
-  console.error('Missing SMTP environment variables (SMTP_HOST, SMTP_USER, SMTP_PASS, FROM_EMAIL) required in production.');
+  console.error('Missing Brevo API environment variables (SMTP_PASS, FROM_EMAIL) required in production.');
   process.exit(1);
 }
 
