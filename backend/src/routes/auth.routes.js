@@ -12,6 +12,7 @@ import {
 import authMiddleware from '../middleware/jwt.js';
 import { authLimiter } from '../middleware/ratelimit.js';
 import prisma from '../lib/prisma.js';
+import config from '../config/constants.js';
 
 const router = Router();
 
@@ -26,17 +27,18 @@ router.post('/verify-otp', authLimiter, verifyOtp);
 
 router.put('/me', authMiddleware, editProfile);
 
-// TEMP DEV ONLY - auto-verify without OTP (remove before final release)
-router.post('/dev/auto-verify', async (req, res) => {
-  const { email } = req.body;
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  await prisma.user.update({
-    where: { email },
-    data: { verified: true, otp: null, otpExpiry: null },
+if (config.isDevelopment) {
+  router.post('/dev/auto-verify', async (req, res) => {
+    const { email } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    await prisma.user.update({
+      where: { email },
+      data: { verified: true, otp: null, otpExpiry: null },
+    });
+    res.json({ message: `User ${email} auto-verified` });
   });
-  res.json({ message: `User ${email} auto-verified` });
-});
+}
 
 // router.post('/google', googleLogin);
 
