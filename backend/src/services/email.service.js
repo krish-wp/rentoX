@@ -11,6 +11,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+console.log({
+  host: config.smtpHost,
+  port: config.smtpPort,
+  user: config.smtpUser,
+});
+
 const sendEmail = async (to, subject, html) => {
   if (!config.smtpUser || !config.smtpPass) {
     throw new Error('SMTP credentials are missing.');
@@ -26,7 +32,8 @@ const sendEmail = async (to, subject, html) => {
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent:', info.messageId);
   } catch (err) {
-    console.error(err);
+    console.error('SMTP Error:', err);
+    throw err;
   }
 };
 
