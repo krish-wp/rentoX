@@ -12,9 +12,8 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, subject, html) => {
-  if (config.isProduction && (!config.smtpUser || !config.smtpPass)) {
-    console.log(`[EMAIL SKIPPED] SMTP credentials missing`);
-    return;
+  if (!config.smtpUser || !config.smtpPass) {
+    throw new Error('SMTP credentials are missing.');
   }
 
   const mailOptions = {
