@@ -27,7 +27,9 @@ app.use(cors({
   credentials: true,
 }));
 app.use(cookieParser());
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
+if (config.isDevelopment) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapi));
+}
 app.use(helmet());
 app.use(globalLimiter);
 
