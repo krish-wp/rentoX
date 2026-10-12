@@ -212,7 +212,12 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
     throw new AppError('No refresh token provided', 401);
   }
 
-  const decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
+  } catch (error) {
+    throw new AppError('Invalid or expired refresh token', 401);
+  }
   const userId = decoded.userId;
 
   const accessToken = jwt.sign({ userId }, config.jwtSecret, {
