@@ -11,6 +11,13 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { otpGenerator, generateOTPhtml } from '../utils/otp.js';
 import sendEmail from '../services/email.service.js';
 import config from '../config/constants.js';
+import crypto from 'crypto';
+
+const hashToken = (token) =>
+  crypto.createHash('sha256').update(token).digest('hex');
+
+const MAX_FAILED_LOGINS = 5;
+const LOCKOUT_MS = 15 * 60 * 1000;
 
 const register = asyncHandler(async (req, res) => {
   const validation = await validateRegister(req.body);
@@ -138,6 +145,16 @@ const login = asyncHandler(async (req, res) => {
     throw new AppError('user not found please register', 401);
   }
 
+  if (
+    existingUser.lockedUntil &&
+    existingUser.lockedUntil.getTime() > Date.now()
+  ) {
+    throw new AppError(
+      'Too many failed login attempts. Please try again later.',
+      429,
+    );
+  }
+
   if (!existingUser.verified) {
     throw new AppError('Please verify your account first', 401);
   }
@@ -148,6 +165,15 @@ const login = asyncHandler(async (req, res) => {
   );
 
   if (!isPasswordCorrect) {
+    const failedLoginAttempts = existingUser.failedLoginAttempts + 1;
+    const lockNow = failedLoginAttempts >= MAX_FAILED_LOGINS;
+    await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        failedLoginAttempts,
+        ...(lockNow && { lockedUntil: new Date(Date.now() + LOCKOUT_MS) }),
+      },
+    });
     throw new AppError('Please enter correct password', 401);
   }
 
@@ -160,6 +186,15 @@ const login = asyncHandler(async (req, res) => {
     config.jwtRefreshSecret,
     { expiresIn: config.refreshTokenExpiry },
   );
+
+  await prisma.user.update({
+    where: { id: existingUser.id },
+    data: {
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      refreshTokenHash: hashToken(refreshToken),
+    },
+  });
 
   res.cookie('token', refreshToken, {
     httpOnly: true,
@@ -197,6 +232,11 @@ const profile = asyncHandler(async (req, res) => {
 });
 
 const logOut = asyncHandler(async (req, res) => {
+  await prisma.user.updateMany({
+    where: { id: req.user, refreshTokenHash: { not: null } },
+    data: { refreshTokenHash: null },
+  });
+
   res.clearCookie('token', {
     httpOnly: true,
     secure: config.isProduction,
@@ -223,12 +263,31 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
   }
   const userId = decoded.userId;
 
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  // Reject any token that is not the one currently on record: this makes a
+  // stolen refresh token useless as soon as the real one is used or revoked.
+  if (!user || user.refreshTokenHash !== hashToken(refreshToken)) {
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { refreshTokenHash: null },
+      });
+    }
+    throw new AppError('Invalid or expired refresh token', 401);
+  }
+
   const accessToken = jwt.sign({ userId }, config.jwtSecret, {
     expiresIn: config.accessTokenExpiry,
   });
 
   const refreshTokenNew = jwt.sign({ userId }, config.jwtRefreshSecret, {
     expiresIn: config.refreshTokenExpiry,
+  });
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { refreshTokenHash: hashToken(refreshTokenNew) },
   });
 
   res.cookie('token', refreshTokenNew, {
