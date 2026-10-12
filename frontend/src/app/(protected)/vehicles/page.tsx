@@ -27,12 +27,16 @@ function VehiclesContent() {
   const [location, setLocation] = useState(searchParams.get("location") || "");
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  const [q, setQ] = useState(searchParams.get("q") || "");
+  const [sort, setSort] = useState(searchParams.get("sort") || "newest");
 
-  const loadVehicles = useCallback(async (page: number, overrides?: { type?: string; location?: string; minPrice?: string; maxPrice?: string }) => {
+  const loadVehicles = useCallback(async (page: number, overrides?: { type?: string; location?: string; minPrice?: string; maxPrice?: string; q?: string; sort?: string }) => {
     const t = overrides?.type ?? type;
     const l = overrides?.location ?? location;
     const mp = overrides?.minPrice ?? minPrice;
     const xp = overrides?.maxPrice ?? maxPrice;
+    const search = overrides?.q ?? q;
+    const sortBy = overrides?.sort ?? sort;
 
     const parsedMin = mp ? Number(mp) : undefined;
     const parsedMax = xp ? Number(xp) : undefined;
@@ -57,6 +61,8 @@ function VehiclesContent() {
         page, limit: INITIAL_LIMIT,
         type: t || undefined, location: l || undefined,
         minPrice: parsedMin, maxPrice: parsedMax,
+        q: search || undefined,
+        sort: (sortBy as "newest" | "price_asc" | "price_desc") || "newest",
       });
       setVehicles(data.vehicles);
       setPagination(data.pagination);
@@ -65,7 +71,7 @@ function VehiclesContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [type, location, minPrice, maxPrice]);
+  }, [type, location, minPrice, maxPrice, q, sort]);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +84,8 @@ function VehiclesContent() {
           location: searchParams.get("location") || undefined,
           minPrice: searchParams.get("minPrice") ? Number(searchParams.get("minPrice")) : undefined,
           maxPrice: searchParams.get("maxPrice") ? Number(searchParams.get("maxPrice")) : undefined,
+          q: searchParams.get("q") || undefined,
+          sort: (searchParams.get("sort") as "newest" | "price_asc" | "price_desc") || "newest",
         });
         if (!cancelled) { setVehicles(data.vehicles); setPagination(data.pagination); }
       } catch {
@@ -98,15 +106,17 @@ function VehiclesContent() {
     if (location) params.set("location", location);
     if (minPrice) params.set("minPrice", minPrice);
     if (maxPrice) params.set("maxPrice", maxPrice);
+    if (q) params.set("q", q);
+    if (sort && sort !== "newest") params.set("sort", sort);
     const qs = params.toString();
     router.push(qs ? `/vehicles?${qs}` : "/vehicles", { scroll: false });
     loadVehicles(1);
   };
 
   const handleClear = () => {
-    setType(""); setLocation(""); setMinPrice(""); setMaxPrice("");
+    setType(""); setLocation(""); setMinPrice(""); setMaxPrice(""); setQ(""); setSort("newest");
     router.push("/vehicles", { scroll: false });
-    loadVehicles(1, { type: "", location: "", minPrice: "", maxPrice: "" });
+    loadVehicles(1, { type: "", location: "", minPrice: "", maxPrice: "", q: "", sort: "newest" });
   };
 
   return (
@@ -114,7 +124,11 @@ function VehiclesContent() {
       <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] mb-8">Browse Vehicles</h1>
 
       <form onSubmit={handleSearch} className="bg-card border border-border/60 p-5 rounded-xl mb-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="q">Search</Label>
+            <Input id="q" type="search" placeholder="Brand, model or keyword" value={q} onChange={(e) => setQ(e.target.value)} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="type">Type</Label>
             <NativeSelect id="type" value={type} onChange={(e) => setType(e.target.value)} className="w-full">
@@ -136,6 +150,14 @@ function VehiclesContent() {
           <div className="space-y-2">
             <Label htmlFor="maxPrice">Max Price (₹)</Label>
             <Input id="maxPrice" type="number" min={0} max={100000} step={50} placeholder="100000" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="sort">Sort By</Label>
+            <NativeSelect id="sort" value={sort} onChange={(e) => setSort(e.target.value)} className="w-full">
+              <NativeSelectOption value="newest">Newest First</NativeSelectOption>
+              <NativeSelectOption value="price_asc">Price: Low to High</NativeSelectOption>
+              <NativeSelectOption value="price_desc">Price: High to Low</NativeSelectOption>
+            </NativeSelect>
           </div>
           <div className="flex items-end gap-2">
             <Button type="submit" className="flex-1">Search</Button>

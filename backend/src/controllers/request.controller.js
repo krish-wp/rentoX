@@ -2,29 +2,19 @@ import prisma from '../lib/prisma.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/appError.js';
 import sendEmail from '../services/email.service.js';
+import { validateRentalRequest } from '../lib/validate.js';
 
 // Send a rental request
 export const sendRequest = asyncHandler(async (req, res, next) => {
-  const { vehicleId, startDate, endDate, message } = req.body;
-
-  // Validate required fields
-  if (!vehicleId) {
-    return next(new AppError('Vehicle ID is required', 400));
+  const validation = validateRentalRequest(req.body);
+  if (!validation.success) {
+    return next(new AppError(validation.error.message, 400));
   }
 
-  //add validation for startDate and endDate
-  if (!startDate || !endDate) {
-    return next(new AppError('Start date and end date are required', 400));
-  }
-
-  //pls validate that startDate is before endDate
+  const { vehicleId, startDate, endDate, message } = validation.data;
 
   const userStart = new Date(startDate);
   const userEnd = new Date(endDate);
-
-  if (userStart >= userEnd) {
-    return next(new AppError('Start date must be before end date', 400));
-  }
 
   const senderId = req.user;
 

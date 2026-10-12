@@ -3,12 +3,20 @@ import prisma from '../lib/prisma.js';
 import { validateVehicle } from '../lib/validate.js';
 
 const getAllVehicles = asyncHandler(async (req, res) => {
-  const { page, limit, type, location, minPrice, maxPrice } = req.query;
+  const { page, limit, type, location, minPrice, maxPrice, q, sort } = req.query;
 
   // Pagination
   const pageNumber = Math.max(Number(page) || 1, 1);
-  const limitNumber = Math.max(Number(limit) || 10, 1);
+  const limitNumber = Math.min(Math.max(Number(limit) || 10, 1), 50);
   const skip = (pageNumber - 1) * limitNumber;
+
+  const search = typeof q === 'string' ? q.trim() : '';
+  const SORT_OPTIONS = {
+    newest: { createdAt: 'desc' },
+    price_asc: { pricePerDay: 'asc' },
+    price_desc: { pricePerDay: 'desc' },
+  };
+  const orderBy = SORT_OPTIONS[sort] ?? SORT_OPTIONS.newest;
 
   // Filters
   const where = {
@@ -28,6 +36,14 @@ const getAllVehicles = asyncHandler(async (req, res) => {
       },
     }),
 
+    ...(search && {
+      OR: [
+        { brand: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ],
+    }),
+
     ...(minPrice || maxPrice
       ? {
           pricePerDay: {
@@ -44,9 +60,7 @@ const getAllVehicles = asyncHandler(async (req, res) => {
       where,
       skip,
       take: limitNumber,
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy,
       include: {
         owner: {
           select: {
@@ -125,19 +139,20 @@ const createVehicle = asyncHandler(async (req, res) => {
 
   // Validate vehicle data using validate.js
   const validation = validateVehicle({
-    ownerId: req.user,
     plateNumber,
     brand,
     model,
     type,
     pricePerDay: parseInt(pricePerDay),
     location,
+    description,
+    imageUrl,
   });
 
   if (!validation.success) {
     return res.status(400).json({
       error: 'Invalid vehicle data',
-      details: validation.error.errors.map((err) => err.message),
+      details: validation.error.message,
     });
   }
 
@@ -169,7 +184,7 @@ const updateVehicle = asyncHandler(async (req, res) => {
   if (!validation.success) {
     return res.status(400).json({
       error: 'Invalid vehicle data',
-      details: validation.error.errors.map((err) => err.message),
+      details: validation.error.message,
     });
   }
   const {

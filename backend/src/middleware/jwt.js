@@ -11,7 +11,9 @@ const authMiddleware = asyncHandler((req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.jwtSecret, {
+      algorithms: ['HS256'],
+    });
     req.user = decoded.userId;
     next();
   } catch (error) {

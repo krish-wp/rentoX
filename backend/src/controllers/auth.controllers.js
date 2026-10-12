@@ -2,6 +2,7 @@ import {
   validateRegister,
   validateLogin,
   validateOtp,
+  validateEditProfile,
 } from '../lib/validate.js';
 import prisma from '../lib/prisma.js';
 import bcrypt from 'bcrypt';
@@ -257,7 +258,9 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
   let decoded;
   try {
-    decoded = jwt.verify(refreshToken, config.jwtRefreshSecret);
+    decoded = jwt.verify(refreshToken, config.jwtRefreshSecret, {
+      algorithms: ['HS256'],
+    });
   } catch (error) {
     throw new AppError('Invalid or expired refresh token', 401);
   }
@@ -305,11 +308,13 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
 const editProfile = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { mobileNumber, state, district, pincode } = req.body;
 
-  if (!mobileNumber || !state || !district || !pincode) {
-    throw new AppError('All fields are required', 400);
+  const validation = validateEditProfile(req.body);
+  if (!validation.success) {
+    throw new AppError(validation.error.message, 400);
   }
+
+  const { mobileNumber, state, district, pincode } = validation.data;
 
   const updatedUser = await prisma.user.update({
     where: { id: userId },

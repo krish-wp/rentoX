@@ -27,6 +27,8 @@ export interface VehicleFilters {
   location?: string;
   minPrice?: number;
   maxPrice?: number;
+  q?: string;
+  sort?: "newest" | "price_asc" | "price_desc";
 }
 
 export interface PaginatedVehicles {
