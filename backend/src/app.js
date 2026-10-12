@@ -44,8 +44,14 @@ app.use('/api/v1/rental-requests', requestLimiter, requestRouter);
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(err.statusCode || 500).json({
-    message: err.message || 'Internal Server Error',
+  const statusCode = err.statusCode || 500;
+  const isOperational = err.isOperational === true || err.expose === true;
+  const message =
+    isOperational || config.isDevelopment
+      ? err.message || 'Internal Server Error'
+      : 'Internal Server Error';
+  res.status(statusCode).json({
+    message,
   });
 });
 
