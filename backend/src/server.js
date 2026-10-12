@@ -21,6 +21,22 @@ if (config.isProduction && (
   process.exit(1);
 }
 
+// CORS origin + password-reset links depend on this, so fail fast instead of
+// silently falling back to localhost in production.
+if (config.isProduction) {
+  let frontendUrl;
+  try {
+    frontendUrl = new URL(config.frontendUrl);
+  } catch {
+    console.error('FRONTEND_URL must be an absolute URL (e.g. https://rentox.example.com).');
+    process.exit(1);
+  }
+  if (!['http:', 'https:'].includes(frontendUrl.protocol)) {
+    console.error('FRONTEND_URL must use http or https.');
+    process.exit(1);
+  }
+}
+
 // Fix for __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

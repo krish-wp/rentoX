@@ -24,10 +24,13 @@ const register = asyncHandler(async (req, res) => {
     where: { email },
   });
 
-  if (existingUser) {
-    if (existingUser.verified) {
-      throw new AppError('user already exist', 409);
-    }
+  // Same response whether or not the email is taken, so the endpoint
+  // cannot be used to enumerate registered accounts.
+  const alreadyRegistered = Boolean(existingUser && existingUser.verified);
+  if (alreadyRegistered) {
+    return res.status(201).json({
+      message: 'otp sent to your email please verify your account',
+    });
   }
 
   const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
