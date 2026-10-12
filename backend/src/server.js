@@ -14,16 +14,6 @@ if (
 }
 
 if (config.isProduction && (
-  !config.googleClientId ||
-  !config.googleClientSecret ||
-  !config.googleRefreshToken ||
-  !config.googleUser
-)) {
-  console.error('Missing Google OAuth environment variables (required in production).');
-  process.exit(1);
-}
-
-if (config.isProduction && (
   !config.smtpPass ||
   !config.fromEmail
 )) {

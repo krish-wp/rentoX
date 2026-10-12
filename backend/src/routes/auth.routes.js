@@ -4,7 +4,6 @@ import {
   login,
   profile,
   logOut,
-  // googleLogin,
   handleRefreshToken,
   editProfile,
   verifyOtp,
@@ -39,7 +38,5 @@ if (config.isDevelopment) {
     res.json({ message: `User ${email} auto-verified` });
   });
 }
-
-// router.post('/google', googleLogin);
 
 export default router;

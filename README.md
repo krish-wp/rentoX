@@ -194,10 +194,6 @@ OTP_EXPIRY_MINUTES=10
 ACCESS_TOKEN_EXPIRY=15m
 REFRESH_TOKEN_EXPIRY=7d
 COOKIE_MAX_AGE_DAYS=7
-GOOGLE_USER=your-email@gmail.com
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_REFRESH_TOKEN=your-refresh-token
 ```
 
 4. **Set up frontend environment variables**
@@ -235,7 +231,7 @@ rentox/
 │   │   ├── schema.prisma          # Database schema (3 models)
 │   │   └── migrations/            # 4 migration files
 │   └── src/
-│       ├── config/                # constants, Google OAuth
+│       ├── config/                # constants
 │       ├── controllers/           # auth, vehicle, request
 │       ├── lib/                   # Prisma client, Zod validation
 │       ├── middleware/            # JWT, profile gate, rate limits
@@ -301,7 +297,6 @@ rentox/
 - [ ] Payment integration (Razorpay)
 - [ ] Reviews and ratings
 - [ ] In-app messaging
-- [ ] Google OAuth login
 
 ## License
 
