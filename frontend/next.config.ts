@@ -32,7 +32,7 @@ const securityHeaders = [
 ];
 
 const backendUrl = process.env.NODE_ENV === "production"
-  ? "https://backend-production-07ce.up.railway.app"
+  ? "https://rentox.onrender.com"
   : "http://localhost:5000";
 
 const nextConfig: NextConfig = {
