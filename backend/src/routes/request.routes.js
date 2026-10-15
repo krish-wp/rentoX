@@ -6,6 +6,8 @@ import {
   getSentRequests,
   updateRequestStatus,
   deleteRequest,
+  getRequestById,
+  cancelRequest,
 } from '../controllers/request.controller.js';
 import authMiddleware from '../middleware/jwt.js';
 import requireCompleteProfile from '../middleware/profileComplete.js';
@@ -24,8 +26,14 @@ router.get('/received', authMiddleware, getReceivedRequests);
 // Get all requests sent by the logged-in user
 router.get('/sent', authMiddleware, getSentRequests);
 
+// Get a single request (sender or vehicle owner only)
+router.get('/:requestId', authMiddleware, getRequestById);
+
 // Update request status by owner (accept/reject)
 router.put('/:requestId/status', authMiddleware, updateRequestStatus);
+
+// Cancel a request (sender only)
+router.put('/:requestId/cancel', authMiddleware, cancelRequest);
 
 //delete request by sender
 router.delete('/:requestId', authMiddleware, deleteRequest);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -8,7 +9,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
-import { getSentRequests, getReceivedRequests, updateRequestStatus, deleteRentalRequest } from "@/services/rental.service";
+import { getSentRequests, getReceivedRequests, updateRequestStatus, deleteRentalRequest, cancelRentalRequest } from "@/services/rental.service";
 import { getApiErrorMessage } from "@/types/api";
 import type { RentalRequest, RentalStatus } from "@/types/vehicle";
 
@@ -16,12 +17,14 @@ const STATUS_VARIANT: Record<RentalStatus, "outline" | "secondary" | "destructiv
   PENDING: "outline",
   ACCEPTED: "secondary",
   REJECTED: "destructive",
+  CANCELLED: "destructive",
 };
 
 const STATUS_LABELS: Record<RentalStatus, string> = {
   PENDING: "Pending",
   ACCEPTED: "Accepted",
   REJECTED: "Rejected",
+  CANCELLED: "Cancelled",
 };
 
 function formatDate(dateStr: string) {
@@ -33,6 +36,7 @@ function calcDays(start: string, end: string) {
 }
 
 export default function BookingsPage() {
+  const router = useRouter();
   const [sentRequests, setSentRequests] = useState<RentalRequest[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +64,18 @@ export default function BookingsPage() {
       setReceivedRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status: status as RentalStatus } : r));
     } catch (err) {
       setActionError(getApiErrorMessage(err, "Failed to update status."));
+      setTimeout(() => setActionError(""), 5000);
+    } finally { setProcessingId(null); }
+  };
+
+  const handleCancel = async (requestId: string) => {
+    if (processingId) return;
+    setProcessingId(requestId); setActionError("");
+    try {
+      await cancelRentalRequest(requestId);
+      setSentRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status: "CANCELLED" as RentalStatus } : r));
+    } catch (err) {
+      setActionError(getApiErrorMessage(err, "Failed to cancel request."));
       setTimeout(() => setActionError(""), 5000);
     } finally { setProcessingId(null); }
   };
@@ -112,6 +128,14 @@ export default function BookingsPage() {
                     {processingId === request.id ? "..." : "Delete"}
                   </Button>
                 )}
+                {type === "sent" && (request.status === "PENDING" || request.status === "ACCEPTED") && (
+                  <Button size="sm" variant="outline" disabled={processingId === request.id} onClick={() => handleCancel(request.id)}>
+                    {processingId === request.id ? "..." : "Cancel"}
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" onClick={() => router.push(`/bookings/${request.id}`)}>
+                  View
+                </Button>
               </div>
             </div>
             <Separator className="my-3" />

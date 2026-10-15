@@ -43,7 +43,7 @@ export interface PaginatedVehicles {
   };
 }
 
-export type RentalStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type RentalStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
 
 export interface RentalRequest {
   id: string;
