@@ -27,6 +27,8 @@ export interface VehicleFilters {
   location?: string;
   minPrice?: number;
   maxPrice?: number;
+  q?: string;
+  sort?: "newest" | "price_asc" | "price_desc";
 }
 
 export interface PaginatedVehicles {
@@ -41,7 +43,7 @@ export interface PaginatedVehicles {
   };
 }
 
-export type RentalStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type RentalStatus = "PENDING" | "ACCEPTED" | "REJECTED" | "CANCELLED";
 
 export interface RentalRequest {
   id: string;

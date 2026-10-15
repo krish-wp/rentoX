@@ -21,11 +21,6 @@ const config = {
   refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY || '7d',
   cookieMaxAgeDays: parseInt(process.env.COOKIE_MAX_AGE_DAYS) || 7,
 
-  googleClientId: process.env.GOOGLE_CLIENT_ID,
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  googleRefreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-  googleUser: process.env.GOOGLE_USER,
-
   smtpPass: process.env.SMTP_PASS,
   fromEmail: process.env.FROM_EMAIL,
 };

@@ -21,6 +21,9 @@ model User {
   pincode            String?
   verified           Boolean          @default(false)
   isProfileCompleted Boolean         @default(false)
+  refreshTokenHash   String?
+  failedLoginAttempts Int            @default(0)
+  lockedUntil        DateTime?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   requests           RentalRequest[]
@@ -63,4 +66,5 @@ enum RequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELLED
 }

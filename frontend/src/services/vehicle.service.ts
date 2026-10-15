@@ -14,6 +14,8 @@ export const getVehicles = async (filters: VehicleFilters = {}): Promise<Paginat
   if (filters.location) params.set("location", filters.location);
   if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.q) params.set("q", filters.q);
+  if (filters.sort) params.set("sort", filters.sort);
 
   const response = await api.get<PaginatedVehicles>(`/vehicles?${params.toString()}`);
   return response.data;

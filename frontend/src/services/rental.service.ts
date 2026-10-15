@@ -44,3 +44,13 @@ export const updateRequestStatus = async (
 export const deleteRentalRequest = async (requestId: string): Promise<void> => {
   await api.delete(`/rental-requests/${requestId}`);
 };
+
+export const getRequestById = async (requestId: string): Promise<RentalResponse> => {
+  const response = await api.get<RentalResponse>(`/rental-requests/${requestId}`);
+  return response.data;
+};
+
+export const cancelRentalRequest = async (requestId: string): Promise<RentalResponse> => {
+  const response = await api.put<RentalResponse>(`/rental-requests/${requestId}/cancel`);
+  return response.data;
+};
