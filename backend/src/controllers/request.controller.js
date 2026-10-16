@@ -1,33 +1,25 @@
 import prisma from '../lib/prisma.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import AppError from '../utils/appError.js';
-import sendEmail from '../services/email.service.js';
+import trySendEmail from '../utils/sendMail.js';
 import { validateRentalRequest } from '../lib/validate.js';
+import { newRequestEmail, statusChangeEmail, cancelEmail } from '../utils/emailTemplates.js';
 
-const rentalStatusEmail = (title, lines) => `
-  <div style="font-family:sans-serif;max-width:520px;margin:auto;border:1px solid #e5e7eb;border-radius:12px;padding:24px">
-    <h2 style="margin:0 0 12px;color:#111827">${title}</h2>
-    ${lines.map((l) => `<p style="margin:0 0 8px;color:#374151">${l}</p>`).join('')}
-    <p style="margin:16px 0 0;color:#6b7280;font-size:13px">— RentoX</p>
-  </div>`;
+const vehicleLabel = (vehicle) => `${vehicle.brand} ${vehicle.model}`;
 
 const notifyStatusChange = async (request, status) => {
-  try {
-    const vehicleLabel = `${request.vehicle.brand} ${request.vehicle.model}`;
-    await sendEmail(
-      request.sender.email,
-      `Your rental request was ${status.toLowerCase()}`,
-      rentalStatusEmail(`Request ${status.toLowerCase()}`, [
-        `Hi ${request.sender.userName},`,
-        `Your request for <strong>${vehicleLabel}</strong> (${request.vehicle.location}) from ${new Date(request.startDate).toDateString()} to ${new Date(request.endDate).toDateString()} was <strong>${status.toLowerCase()}</strong>.`,
-        status === 'ACCEPTED'
-          ? 'The owner will coordinate pickup details with you.'
-          : 'You can browse other available vehicles and send a new request.',
-      ]),
-    );
-  } catch (err) {
-    console.error('Failed to send status email:', err.message);
-  }
+  await trySendEmail(
+    request.sender.email,
+    `Your rental request was ${status.toLowerCase()}`,
+    statusChangeEmail(
+      request.sender.userName,
+      status,
+      vehicleLabel(request.vehicle),
+      request.startDate,
+      request.endDate,
+    ),
+    'status-change',
+  );
 };
 
 // Send a rental request
@@ -79,8 +71,6 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
     },
   });
 
-  console.log('conflicting', conflict);
-
   if (conflict != null) {
     const start = conflict.startDate.toISOString().split('T')[0];
     const end = conflict.endDate.toISOString().split('T')[0];
@@ -101,15 +91,17 @@ export const sendRequest = asyncHandler(async (req, res, next) => {
     },
   });
 
-  try {
-    await sendEmail(
-      vehicle.owner.email,
-      'New Rental Request',
-      `You have received a new rental request for your vehicle ${vehicle.brand} ${vehicle.model}. Please log in to your account to view and respond to the request.`,
-    );
-  } catch (emailError) {
-    console.error('Failed to send rental request email:', emailError.message);
-  }
+  await trySendEmail(
+    vehicle.owner.email,
+    'New Rental Request',
+    newRequestEmail(
+      vehicle.owner.userName,
+      vehicleLabel(vehicle),
+      userStart,
+      userEnd,
+    ),
+    'new-request',
+  );
 
   res.status(201).json({
     success: true,
@@ -341,19 +333,18 @@ export const cancelRequest = asyncHandler(async (req, res, next) => {
     data: { status: 'CANCELLED' },
   });
 
-  try {
-    const vehicleLabel = `${request.vehicle.brand} ${request.vehicle.model}`;
-    await sendEmail(
-      request.vehicle.owner.email,
-      'A rental request was cancelled',
-      rentalStatusEmail('Request cancelled', [
-        `Hi ${request.vehicle.owner.userName},`,
-        `${request.sender.userName} cancelled their request for <strong>${vehicleLabel}</strong> (${new Date(request.startDate).toDateString()} to ${new Date(request.endDate).toDateString()}).`,
-      ]),
-    );
-  } catch (err) {
-    console.error('Failed to send cancel email:', err.message);
-  }
+  await trySendEmail(
+    request.vehicle.owner.email,
+    'A rental request was cancelled',
+    cancelEmail(
+      request.vehicle.owner.userName,
+      request.sender.userName,
+      vehicleLabel(request.vehicle),
+      request.startDate,
+      request.endDate,
+    ),
+    'cancel',
+  );
 
   res.status(200).json({
     success: true,

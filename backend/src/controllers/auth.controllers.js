@@ -9,8 +9,9 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import AppError from '../utils/appError.js';
 import asyncHandler from '../utils/asyncHandler.js';
-import { otpGenerator, generateOTPhtml } from '../utils/otp.js';
-import sendEmail from '../services/email.service.js';
+import { otpGenerator } from '../utils/otp.js';
+import { otpEmail, alreadyRegisteredEmail } from '../utils/emailTemplates.js';
+import trySendEmail from '../utils/sendMail.js';
 import config from '../config/constants.js';
 import crypto from 'crypto';
 
@@ -28,64 +29,47 @@ const register = asyncHandler(async (req, res) => {
   }
   const { username, email, password } = validation.data;
 
-  let existingUser = await prisma.user.findUnique({
+  const existingUser = await prisma.user.findUnique({
     where: { email },
   });
 
   // Same response whether or not the email is taken, so the endpoint
   // cannot be used to enumerate registered accounts.
-  const alreadyRegistered = Boolean(existingUser && existingUser.verified);
-  if (alreadyRegistered) {
+  if (existingUser && existingUser.verified) {
+    await trySendEmail(
+      email,
+      'You already have a RentoX account',
+      alreadyRegisteredEmail(existingUser.userName),
+      'already-registered',
+    );
     return res.status(201).json({
       message: 'otp sent to your email please verify your account',
     });
   }
 
-  const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
-
   const otp = otpGenerator();
-
-  const otpEmail = generateOTPhtml(otp);
-
   const hashedOtp = await bcrypt.hash(otp, config.bcryptSaltRounds);
 
   if (!existingUser) {
-    existingUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
         userName: username,
         email,
-        password: hashedPassword,
+        password: await bcrypt.hash(password, config.bcryptSaltRounds),
         verified: false,
-      },
-      select: {
-        id: true,
-        userName: true,
-        email: true,
       },
     });
   }
 
-  existingUser = await prisma.user.update({
+  await prisma.user.update({
     where: { email },
     data: {
       otp: hashedOtp,
       otpExpiry: new Date(Date.now() + config.otpExpiryMinutes * 60 * 1000),
     },
-    select: {
-      id: true,
-      userName: true,
-      email: true,
-    },
   });
 
-  try {
-    await sendEmail(email, 'Welcome to RentoX', otpEmail.html);
-  } catch (emailError) {
-    console.error('Failed to send OTP email:', emailError.message);
-    if (config.isDevelopment) {
-      console.log(`[DEV OTP] Email: ${email} | OTP: ${otp}`);
-    }
-  }
+  await trySendEmail(email, 'Welcome to RentoX', otpEmail(otp), 'OTP');
 
   res.status(201).json({
     message: 'otp sent to your email please verify your account',
