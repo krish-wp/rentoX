@@ -4,7 +4,7 @@ A full-stack vehicle rental marketplace built for the Indian market. Users can r
 
 ## Live Demo
 
-🔗 [Frontend](https://rento-x.vercel.app) | [Backend API](https://backend-production-07ce.up.railway.app/api-docs)
+🔗 [Frontend](https://rento-x.vercel.app) | [Backend API](https://rentox.onrender.com/api-docs)
 
 ## Screenshots
 
@@ -30,7 +30,7 @@ A full-stack vehicle rental marketplace built for the Indian market. Users can r
 - [Prisma ORM](https://www.prisma.io/) + PostgreSQL — Database
 - JWT (access + refresh tokens) with httpOnly cookies — Authentication
 - [bcrypt](https://github.com/kelektiv/node.bcrypt.js) — Password hashing
-- [Nodemailer](https://nodemailer.com/) (Gmail OAuth2) — Email service
+- [Brevo API](https://developers.brevo.com/) — Email service (HTTP, no SMTP)
 - [Zod](https://zod.dev/) — Input validation
 - [Swagger](https://swagger.io/) / OpenAPI 3.0.3 — API documentation
 - [Helmet](https://helmetjs.github.io/) + [express-rate-limit](https://www.npmjs.com/package/express-rate-limit) — Security
@@ -44,7 +44,7 @@ A full-stack vehicle rental marketplace built for the Indian market. Users can r
 | nodemon | Backend auto-restart |
 | ESLint + Prettier | Code quality |
 | Vercel | Frontend deployment |
-| Railway | Backend + DB deployment |
+| Render | Backend deployment |
 
 ## Features
 
@@ -81,7 +81,8 @@ A full-stack vehicle rental marketplace built for the Indian market. Users can r
 - Accept / reject received requests (owner only)
 - Delete sent requests (sender only)
 - Tabbed dashboard: Sent / Received with count badges
-- Email notification to owner on new request
+- Cancel active requests (sender only)
+- Email notifications: new request to owner, status changes to sender, cancellations to owner
 
 ### 🇮🇳 India-Focused
 - 28 states + 8 union territories in cascading dropdowns
@@ -151,6 +152,8 @@ Full OpenAPI 3.0.3 specification available at `/api-docs` when the server is run
 | GET | `/received` | Yes | My received requests |
 | GET | `/vehicle/:vehicleId` | Yes | Requests for vehicle (owner) |
 | PUT | `/:requestId/status` | Yes | Accept/reject (owner) |
+| GET | `/:requestId` | Yes | Get single request (sender/owner) |
+| PUT | `/:requestId/cancel` | Yes | Cancel request (sender) |
 | DELETE | `/:requestId` | Yes | Delete request (sender) |
 
 _* Requires complete profile_
@@ -161,7 +164,7 @@ _* Requires complete profile_
 
 - Node.js (v18+)
 - PostgreSQL (local or remote)
-- Gmail account with OAuth2 credentials (for email service)
+- Brevo account with API key (for email service)
 
 ### Setup
 
@@ -236,7 +239,7 @@ rentox/
 │       ├── lib/                   # Prisma client, Zod validation
 │       ├── middleware/            # JWT, profile gate, rate limits
 │       ├── routes/                # Route definitions
-│       ├── services/              # Email service (Nodemailer)
+│       ├── services/              # Email service (Brevo API)
 │       ├── utils/                 # Error classes, helpers, OTP
 │       ├── app.js                 # Express app setup
 │       └── server.js              # Entry point
@@ -288,11 +291,11 @@ rentox/
 | id | UUID | Primary key |
 | startDate / endDate | DateTime | Rental period |
 | message | String? | Optional note |
-| status | Enum | PENDING, ACCEPTED, REJECTED |
+| status | Enum | PENDING, ACCEPTED, REJECTED, CANCELLED |
 
 ## Roadmap
 
-- [ ] Deploy to production
+- [x] Deploy to production
 - [ ] Image upload (Cloudinary)
 - [ ] Payment integration (Razorpay)
 - [ ] Reviews and ratings
