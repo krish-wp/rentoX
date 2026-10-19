@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 
@@ -8,6 +8,20 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 });
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const themeBootstrap = `
+(function(){try{
+  var s=localStorage.getItem('rentox-theme');
+  var d=s?s==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if(d)document.documentElement.classList.add('dark');
+}catch(e){}})();
+`;
 
 export const metadata: Metadata = {
   title: {
@@ -44,8 +58,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
       </body>
