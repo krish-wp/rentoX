@@ -8,8 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { verifyOtp } from "@/services/auth.service";
 import { getApiErrorMessage } from "@/types/api";
 import { otpSchema, type OtpFormData } from "@/lib/form-utils";
@@ -82,47 +82,42 @@ function VerifyOtpForm() {
   }, [success, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center pb-0">
-          <CardTitle className="text-xl font-bold tracking-[-0.02em]">Verify OTP</CardTitle>
-          <CardDescription>Enter the 6-digit code sent to {email || "your email"}</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-6">
-          {!email && <Alert variant="error">Email parameter is missing. Please go back and register again.</Alert>}
-          {error && <Alert variant="error">{error}</Alert>}
-          {success && <Alert variant="success">{success}</Alert>}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-center block">Enter Verification Code</Label>
-              <div className="flex gap-2 justify-center">
-                {otp.map((digit, index) => (
-                  <Input
-                    key={index}
-                    id={`otp-${index}`}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleKeyDown(index, e)}
-                    onPaste={handlePaste}
-                    className="w-12 h-12 text-center text-lg"
-                    aria-label={`OTP digit ${index + 1}`}
-                    disabled={isSubmitting || !email}
-                  />
-                ))}
-              </div>
-              {errors.otp && <p className="text-sm text-destructive text-center">{errors.otp.message}</p>}
-            </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting || !email}>
-              {isSubmitting ? "Verifying..." : "Verify OTP"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <AuthShell
+      title="Verify OTP"
+      description={`Enter the 6-digit code sent to ${email || "your email"}`}
+    >
+      {!email && <div className="mb-5"><Alert variant="error">Email parameter is missing. Please go back and register again.</Alert></div>}
+      {error && <div className="mb-5"><Alert variant="error">{error}</Alert></div>}
+      {success && <div className="mb-5"><Alert variant="success">{success}</Alert></div>}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-2">
+          <Label className="block text-center">Enter Verification Code</Label>
+          <div className="flex justify-center gap-2">
+            {otp.map((digit, index) => (
+              <Input
+                key={index}
+                id={`otp-${index}`}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handlePaste}
+                className="h-12 w-12 text-center text-lg tabular-nums"
+                aria-label={`OTP digit ${index + 1}`}
+                disabled={isSubmitting || !email}
+              />
+            ))}
+          </div>
+          {errors.otp && <p className="text-center text-sm text-destructive" role="alert">{errors.otp.message}</p>}
+        </div>
+        <Button type="submit" className="h-11 w-full" disabled={isSubmitting || !email}>
+          {isSubmitting ? "Verifying…" : "Verify OTP"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }
 
