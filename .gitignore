@@ -57,3 +57,7 @@ backend/rentoX
 # load test output
 loadtest/results/*
 !loadtest/results/.gitkeep
+
+agents.md
+
+.opencode
