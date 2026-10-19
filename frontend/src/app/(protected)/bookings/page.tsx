@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -9,15 +10,19 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ListSkeleton } from "@/components/ui/skeleton";
+import { VehicleImage } from "@/components/ui/vehicle-image";
 import { getSentRequests, getReceivedRequests, updateRequestStatus, deleteRentalRequest, cancelRentalRequest } from "@/services/rental.service";
 import { getApiErrorMessage } from "@/types/api";
 import type { RentalRequest, RentalStatus } from "@/types/vehicle";
+import { MapPin, Send, Inbox, CalendarDays } from "lucide-react";
 
-const STATUS_VARIANT: Record<RentalStatus, "outline" | "secondary" | "destructive"> = {
-  PENDING: "outline",
-  ACCEPTED: "secondary",
+const STATUS_VARIANT: Record<RentalStatus, "warning" | "success" | "destructive" | "secondary"> = {
+  PENDING: "warning",
+  ACCEPTED: "success",
   REJECTED: "destructive",
-  CANCELLED: "destructive",
+  CANCELLED: "secondary",
 };
 
 const STATUS_LABELS: Record<RentalStatus, string> = {
@@ -41,7 +46,6 @@ export default function BookingsPage() {
   const [receivedRequests, setReceivedRequests] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionError, setActionError] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RentalRequest | null>(null);
 
@@ -58,37 +62,38 @@ export default function BookingsPage() {
 
   const handleStatusUpdate = async (requestId: string, status: "ACCEPTED" | "REJECTED") => {
     if (processingId) return;
-    setProcessingId(requestId); setActionError("");
+    setProcessingId(requestId);
     try {
       await updateRequestStatus(requestId, status);
       setReceivedRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status: status as RentalStatus } : r));
+      toast.success(status === "ACCEPTED" ? "Request accepted" : "Request rejected");
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Failed to update status."));
-      setTimeout(() => setActionError(""), 5000);
+      toast.error(getApiErrorMessage(err, "Failed to update status."));
     } finally { setProcessingId(null); }
   };
 
   const handleCancel = async (requestId: string) => {
     if (processingId) return;
-    setProcessingId(requestId); setActionError("");
+    setProcessingId(requestId);
     try {
       await cancelRentalRequest(requestId);
       setSentRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status: "CANCELLED" as RentalStatus } : r));
+      toast.success("Request cancelled");
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Failed to cancel request."));
-      setTimeout(() => setActionError(""), 5000);
+      toast.error(getApiErrorMessage(err, "Failed to cancel request."));
     } finally { setProcessingId(null); }
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget || processingId) return;
-    setProcessingId(deleteTarget.id); setActionError("");
+    const target = deleteTarget;
+    setProcessingId(target.id);
     try {
-      await deleteRentalRequest(deleteTarget.id);
-      setSentRequests((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+      await deleteRentalRequest(target.id);
+      setSentRequests((prev) => prev.filter((r) => r.id !== target.id));
+      toast.success("Request deleted");
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Failed to delete request."));
-      setTimeout(() => setActionError(""), 5000);
+      toast.error(getApiErrorMessage(err, "Failed to delete request."));
     } finally {
       setProcessingId(null);
       setDeleteTarget(null);
@@ -97,49 +102,68 @@ export default function BookingsPage() {
 
   const renderRequestList = (requests: RentalRequest[], type: "sent" | "received") => (
     <div className="space-y-4">
-      {requests.map((request) => (
-        <Card key={request.id}>
-          <CardContent className="p-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold">{request.vehicle?.brand} {request.vehicle?.model}</h3>
+      {requests.map((request, index) => (
+        <Card key={request.id} className="group overflow-hidden transition-shadow hover:shadow-md" style={{ animationDelay: `${index * 40}ms` }}>
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <div className="relative h-20 w-full shrink-0 overflow-hidden rounded-lg sm:w-28 group-hover:[&>div_img]:scale-105">
+                <VehicleImage
+                  src={request.vehicle?.imageUrl}
+                  alt={`${request.vehicle?.brand ?? "Vehicle"} ${request.vehicle?.model ?? ""}`}
+                  fill
+                  sizes="112px"
+                  className="rounded-lg"
+                />
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="truncate font-semibold text-foreground">{request.vehicle?.brand} {request.vehicle?.model}</h3>
                   <Badge variant={STATUS_VARIANT[request.status]}>{STATUS_LABELS[request.status]}</Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{request.vehicle?.location} · {request.vehicle?.plateNumber}</p>
-                <p className="text-sm text-muted-foreground">{formatDate(request.startDate)} — {formatDate(request.endDate)}</p>
-                {request.message && <p className="text-sm text-muted-foreground italic">&quot;{request.message}&quot;</p>}
-                {type === "sent" && request.vehicle?.owner && <p className="text-sm text-muted-foreground">Owner: {request.vehicle.owner.userName}</p>}
-                {type === "received" && request.sender && <p className="text-sm text-muted-foreground">Requester: {request.sender.userName}</p>}
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+                  {request.vehicle?.location}
+                  {request.vehicle?.plateNumber ? ` · ${request.vehicle.plateNumber}` : ""}
+                </p>
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
+                  {formatDate(request.startDate)} — {formatDate(request.endDate)}
+                  <span className="text-muted-foreground/70">· {calcDays(request.startDate, request.endDate)}d</span>
+                </p>
+                {request.message && <p className="text-sm text-muted-foreground italic line-clamp-2">&quot;{request.message}&quot;</p>}
+                <p className="text-sm text-muted-foreground">
+                  {type === "sent" && request.vehicle?.owner ? `Owner: ${request.vehicle.owner.userName}` : ""}
+                  {type === "received" && request.sender ? `Requester: ${request.sender.userName}` : ""}
+                </p>
               </div>
-              <div className="flex gap-2 shrink-0">
+              <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
                 {type === "received" && request.status === "PENDING" && (
                   <>
                     <Button size="sm" disabled={processingId === request.id} onClick={() => handleStatusUpdate(request.id, "ACCEPTED")}>
                       {processingId === request.id ? "..." : "Accept"}
                     </Button>
                     <Button size="sm" variant="outline" disabled={processingId === request.id} onClick={() => handleStatusUpdate(request.id, "REJECTED")}>
-                      {processingId === request.id ? "..." : "Reject"}
+                      Reject
                     </Button>
                   </>
                 )}
                 {type === "sent" && request.status === "PENDING" && (
-                  <Button size="sm" variant="destructive" disabled={processingId === request.id} onClick={() => setDeleteTarget(request)}>
-                    {processingId === request.id ? "..." : "Delete"}
+                  <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={processingId === request.id} onClick={() => setDeleteTarget(request)}>
+                    Delete
                   </Button>
                 )}
                 {type === "sent" && (request.status === "PENDING" || request.status === "ACCEPTED") && (
                   <Button size="sm" variant="outline" disabled={processingId === request.id} onClick={() => handleCancel(request.id)}>
-                    {processingId === request.id ? "..." : "Cancel"}
+                    Cancel
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" onClick={() => router.push(`/bookings/${request.id}`)}>
+                <Button size="sm" variant="ghost" className="text-primary hover:text-primary/80" onClick={() => router.push(`/bookings/${request.id}`)}>
                   View
                 </Button>
               </div>
             </div>
             <Separator className="my-3" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground tabular-nums">
               ₹{request.vehicle?.pricePerDay}/day · Total: ₹
               {request.vehicle?.pricePerDay ? request.vehicle.pricePerDay * calcDays(request.startDate, request.endDate) : "—"}
             </p>
@@ -151,10 +175,13 @@ export default function BookingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] mb-8">My Bookings</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold mb-8">My Bookings</h1>
 
-      {error && <Alert variant="error">{error}</Alert>}
-      {actionError && <Alert variant="error">{actionError}</Alert>}
+      {error && (
+        <div className="mb-6">
+          <Alert variant="error">{error}</Alert>
+        </div>
+      )}
 
       <Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
         <DialogContent>
@@ -172,7 +199,10 @@ export default function BookingsPage() {
       </Dialog>
 
       {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground" role="status" aria-live="polite">Loading bookings...</div>
+        <div role="status" aria-live="polite">
+          <span className="sr-only">Loading bookings…</span>
+          <ListSkeleton rows={4} />
+        </div>
       ) : (
         <Tabs defaultValue="sent">
           <TabsList>
@@ -181,14 +211,24 @@ export default function BookingsPage() {
           </TabsList>
           <TabsContent value="sent">
             {sentRequests.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No sent requests yet.</div>
+              <EmptyState
+                icon={Send}
+                title="No sent requests yet"
+                description="Browse vehicles and send a rental request to get started."
+                action={<Button onClick={() => router.push("/vehicles")}>Browse Vehicles</Button>}
+              />
             ) : (
               renderRequestList(sentRequests, "sent")
             )}
           </TabsContent>
           <TabsContent value="received">
             {receivedRequests.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">No received requests yet.</div>
+              <EmptyState
+                icon={Inbox}
+                title="No received requests yet"
+                description="List your vehicles to start receiving rental requests."
+                action={<Button onClick={() => router.push("/vehicles/new")}>Add a Vehicle</Button>}
+              />
             ) : (
               renderRequestList(receivedRequests, "received")
             )}

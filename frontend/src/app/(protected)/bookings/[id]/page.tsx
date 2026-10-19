@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { VehicleImage } from "@/components/ui/vehicle-image";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   getRequestById,
   updateRequestStatus,
@@ -15,11 +26,11 @@ import {
 import { getApiErrorMessage } from "@/types/api";
 import type { RentalRequest, RentalStatus } from "@/types/vehicle";
 
-const STATUS_VARIANT: Record<RentalStatus, "outline" | "secondary" | "destructive"> = {
-  PENDING: "outline",
-  ACCEPTED: "secondary",
+const STATUS_VARIANT: Record<RentalStatus, "warning" | "success" | "destructive" | "secondary"> = {
+  PENDING: "warning",
+  ACCEPTED: "success",
   REJECTED: "destructive",
-  CANCELLED: "destructive",
+  CANCELLED: "secondary",
 };
 
 const STATUS_LABELS: Record<RentalStatus, string> = {
@@ -44,8 +55,8 @@ export default function BookingDetailPage() {
   const [request, setRequest] = useState<RentalRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [actionError, setActionError] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,33 +69,53 @@ export default function BookingDetailPage() {
 
   const runStatus = async (status: "ACCEPTED" | "REJECTED") => {
     if (!request || processing) return;
-    setProcessing(true); setActionError("");
+    setProcessing(true);
     try {
       await updateRequestStatus(request.id, status);
       setRequest({ ...request, status: status as RentalStatus });
+      toast.success(status === "ACCEPTED" ? "Request accepted" : "Request rejected");
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Failed to update status."));
-      setTimeout(() => setActionError(""), 5000);
+      toast.error(getApiErrorMessage(err, "Failed to update status."));
     } finally { setProcessing(false); }
   };
 
   const runCancel = async () => {
     if (!request || processing) return;
-    setProcessing(true); setActionError("");
+    setProcessing(true);
     try {
       await cancelRentalRequest(request.id);
       setRequest({ ...request, status: "CANCELLED" });
+      setConfirmCancel(false);
+      toast.success("Request cancelled");
     } catch (err) {
-      setActionError(getApiErrorMessage(err, "Failed to cancel request."));
-      setTimeout(() => setActionError(""), 5000);
-    } finally { setProcessing(false); }
+      toast.error(getApiErrorMessage(err, "Failed to cancel request."));
+    } finally {
+      setProcessing(false);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="text-center py-12 text-muted-foreground" role="status" aria-live="polite">
-          Loading booking...
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10" role="status" aria-live="polite">
+        <span className="sr-only">Loading booking…</span>
+        <Skeleton className="mb-8 h-9 w-56" />
+        <div className="space-y-4 rounded-xl border border-border/60 bg-card p-6 shadow-card">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-16 w-24" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          </div>
+          <Separator />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-3.5 w-20" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -106,33 +137,41 @@ export default function BookingDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em]">Booking Details</h1>
-        <Button variant="outline" onClick={() => router.push("/bookings")}>Back</Button>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon-sm" onClick={() => router.push("/bookings")} aria-label="Back to bookings">
+            <ArrowLeft />
+          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold">Booking Details</h1>
+        </div>
+        <Badge variant={STATUS_VARIANT[request.status]} className="h-6 px-3 text-xs">{STATUS_LABELS[request.status]}</Badge>
       </div>
 
       {error && <div className="mb-4"><Alert variant="error">{error}</Alert></div>}
-      {actionError && <div className="mb-4"><Alert variant="error">{actionError}</Alert></div>}
 
-      <Card>
-        <CardContent className="p-6 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              {request.vehicle?.imageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={request.vehicle.imageUrl} alt={`${request.vehicle.brand} ${request.vehicle.model}`} className="h-16 w-24 rounded-lg object-cover border border-border/60" />
-              )}
-              <div>
-                <h2 className="text-lg font-semibold">{request.vehicle?.brand} {request.vehicle?.model}</h2>
-                <p className="text-sm text-muted-foreground">{request.vehicle?.location} · {request.vehicle?.plateNumber}</p>
-              </div>
+      <Card className="overflow-hidden">
+        <CardContent className="p-5 sm:p-6 space-y-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl sm:w-44">
+              <VehicleImage
+                src={request.vehicle?.imageUrl}
+                alt={`${request.vehicle?.brand ?? "Vehicle"} ${request.vehicle?.model ?? ""}`}
+                fill
+                sizes="176px"
+                priority
+                className="rounded-xl"
+              />
             </div>
-            <Badge variant={STATUS_VARIANT[request.status]}>{STATUS_LABELS[request.status]}</Badge>
+            <div>
+              <h2 className="text-lg font-semibold">{request.vehicle?.brand} {request.vehicle?.model}</h2>
+              <p className="text-sm text-muted-foreground">{request.vehicle?.location} · {request.vehicle?.plateNumber}</p>
+              <p className="mt-2 text-sm font-medium tabular-nums text-primary">₹{request.vehicle?.pricePerDay}/day</p>
+            </div>
           </div>
 
           <Separator />
 
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted-foreground">Start Date</dt>
               <dd className="font-medium">{formatDate(request.startDate)}</dd>
@@ -147,7 +186,7 @@ export default function BookingDetailPage() {
             </div>
             <div>
               <dt className="text-muted-foreground">Rate</dt>
-              <dd className="font-medium">₹{request.vehicle?.pricePerDay}/day</dd>
+              <dd className="font-medium tabular-nums">₹{request.vehicle?.pricePerDay}/day</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Requester</dt>
@@ -160,8 +199,8 @@ export default function BookingDetailPage() {
           </dl>
 
           {request.message && (
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Message</p>
+            <div className="rounded-lg bg-muted/50 p-3.5">
+              <p className="mb-1 text-sm text-muted-foreground">Message</p>
               <p className="text-sm italic">&quot;{request.message}&quot;</p>
             </div>
           )}
@@ -170,12 +209,14 @@ export default function BookingDetailPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-muted-foreground">
-              {total !== null ? <>Total: <span className="font-semibold text-foreground">₹{total}</span></> : "Total unavailable"}
+              {total !== null ? (
+                <>Total: <span className="text-lg font-semibold tabular-nums text-foreground">₹{total}</span></>
+              ) : "Total unavailable"}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {request.status === "PENDING" && (
                 <>
-                  <Button size="sm" variant="outline" disabled={processing} onClick={() => runStatus("ACCEPTED")}>
+                  <Button size="sm" disabled={processing} onClick={() => runStatus("ACCEPTED")}>
                     Accept
                   </Button>
                   <Button size="sm" variant="outline" disabled={processing} onClick={() => runStatus("REJECTED")}>
@@ -184,7 +225,7 @@ export default function BookingDetailPage() {
                 </>
               )}
               {(request.status === "PENDING" || request.status === "ACCEPTED") && (
-                <Button size="sm" variant="destructive" disabled={processing} onClick={runCancel}>
+                <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={processing} onClick={() => setConfirmCancel(true)}>
                   Cancel Request
                 </Button>
               )}
@@ -192,6 +233,24 @@ export default function BookingDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+        <DialogContent>
+          <DialogTitle>Cancel this request?</DialogTitle>
+          <DialogDescription>
+            This will cancel your {request.status === "ACCEPTED" ? "accepted booking" : "rental request"} for{" "}
+            {request.vehicle ? `${request.vehicle.brand} ${request.vehicle.model}` : "this vehicle"}. This cannot be undone.
+          </DialogDescription>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmCancel(false)} disabled={processing}>
+              Keep Request
+            </Button>
+            <Button variant="destructive" onClick={runCancel} disabled={processing}>
+              {processing ? "Cancelling…" : "Yes, Cancel It"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
