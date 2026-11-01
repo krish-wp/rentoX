@@ -28,6 +28,8 @@ model User {
   updatedAt          DateTime        @updatedAt
   requests           RentalRequest[]
   vehicles           Vehicle[]
+  reviewsGiven       Review[]    @relation("ReviewReviewer")
+  reviewsReceived    Review[]    @relation("ReviewReviewee")
 }
 
 model Vehicle {
@@ -60,6 +62,7 @@ model RentalRequest {
   updatedAt DateTime      @updatedAt
   sender    User          @relation(fields: [senderId], references: [id])
   vehicle   Vehicle       @relation(fields: [vehicleId], references: [id])
+  review    Review?
 }
 
 enum RequestStatus {
@@ -67,4 +70,21 @@ enum RequestStatus {
   ACCEPTED
   REJECTED
   CANCELLED
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  rentalRequestId String
+  reviewerId    String
+  revieweeId    String
+  rating        Int      @default(5)
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  rentalRequest RentalRequest @relation(fields: [rentalRequestId], references: [id])
+  reviewer      User          @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+  reviewee      User          @relation("ReviewReviewee", fields: [revieweeId], references: [id])
+
+  @@unique([rentalRequestId])
 }

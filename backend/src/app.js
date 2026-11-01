@@ -36,10 +36,12 @@ app.use(globalLimiter);
 import authRouter from './routes/auth.routes.js';
 import vehicleRouter from './routes/vehicle.routes.js';
 import requestRouter from './routes/request.routes.js';
+import reviewRouter from './routes/review.routes.js';
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/vehicles', vehicleLimiter, vehicleRouter);
 app.use('/api/v1/rental-requests', requestLimiter, requestRouter);
+app.use('/api/v1', reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { UserRound, Pencil, LogOut, Mail, Phone, MapPin, BadgeCheck, Car, Inbox, Send } from "lucide-react";
+import { UserRound, Pencil, LogOut, Mail, Phone, MapPin, BadgeCheck, Car, Inbox, Send, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,9 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getMyVehicles } from "@/services/vehicle.service";
 import { getSentRequests, getReceivedRequests } from "@/services/rental.service";
+import { getUserReviews } from "@/services/review.service";
 import type { User } from "@/types/auth";
+import type { UserReviewStats } from "@/types/vehicle";
 
 interface Stats {
   vehicles: number | null;
@@ -37,14 +39,16 @@ export default function MePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [stats, setStats] = useState<Stats>({ vehicles: null, sent: null, received: null });
+  const [reviewStats, setReviewStats] = useState<UserReviewStats | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [vehicles, sent, received] = await Promise.allSettled([
+      const [vehicles, sent, received, reviews] = await Promise.allSettled([
         getMyVehicles(),
         getSentRequests(),
         getReceivedRequests(),
+        getUserReviews(user?.id || ""),
       ]);
       if (cancelled) return;
       setStats({
@@ -52,9 +56,12 @@ export default function MePage() {
         sent: sent.status === "fulfilled" ? sent.value.count : null,
         received: received.status === "fulfilled" ? received.value.count : null,
       });
+      if (reviews.status === "fulfilled") {
+        setReviewStats(reviews.value);
+      }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [user?.id]);
 
   const handleLogout = async () => {
     try {
@@ -114,13 +121,20 @@ export default function MePage() {
                 {initials || <UserRound className="size-8" aria-hidden="true" />}
               </div>
               <div className="min-w-0 pb-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-semibold">{user?.userName || "—"}</h2>
-                  <Badge variant={user?.isProfileCompleted ? "success" : "warning"} className="gap-1">
-                    <BadgeCheck className="size-3" aria-hidden="true" />
-                    {user?.isProfileCompleted ? "Complete" : "Incomplete"}
-                  </Badge>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="truncate text-xl font-semibold">{user?.userName || "—"}</h2>
+                {reviewStats?.reviewCount && reviewStats.reviewCount > 0 && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-yellow-500 text-xs">★</span>
+                    <span className="text-xs font-medium">{reviewStats.averageRating.toFixed(1)}</span>
+                    <span className="text-xs text-muted-foreground">({reviewStats.reviewCount})</span>
+                  </div>
+                )}
+                <Badge variant={user?.isProfileCompleted ? "success" : "warning"} className="gap-1">
+                  <BadgeCheck className="size-3" aria-hidden="true" />
+                  {user?.isProfileCompleted ? "Complete" : "Incomplete"}
+                </Badge>
+              </div>
                 <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
               </div>
               <Link href="/me/edit" className="ml-auto pb-1">
@@ -137,6 +151,12 @@ export default function MePage() {
               { label: "Vehicles Listed", value: stats.vehicles, icon: Car, href: "/me/vehicles" },
               { label: "Requests Sent", value: stats.sent, icon: Send, href: "/bookings" },
               { label: "Requests Received", value: stats.received, icon: Inbox, href: "/bookings" },
+              {
+                label: "Member Rating",
+                value: reviewStats?.reviewCount && reviewStats.reviewCount > 0 ? reviewStats.averageRating.toFixed(1) : null,
+                icon: Star,
+                href: "/bookings",
+              },
             ] as const
           ).map((stat) => {
             const Icon = stat.icon;
@@ -145,7 +165,7 @@ export default function MePage() {
                 <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
                   <CardContent className="flex items-center gap-4 p-5">
                     <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                      <Icon className="size-5 text-primary" aria-hidden="true" />
+                      <Icon className="size-5 text-yellow-500" aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
                       {stat.value === null ? (

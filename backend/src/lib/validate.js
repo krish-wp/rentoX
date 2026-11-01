@@ -69,6 +69,11 @@ const otpSchema = z.object({
   otp: z.string().length(6),
 });
 
+const reviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().max(500).optional(),
+});
+
 const formatIssues = (error) =>
   error.issues.map((issue) => issue.message).join('; ');
 
@@ -99,5 +104,10 @@ export const validateEditProfile = (data) => {
 
 export const validateOtp = (data) => {
   const result = otpSchema.safeParse(data);
+  return result.success ? result : { ...result, error: { ...result.error, message: formatIssues(result.error) } };
+};
+
+export const validateReview = (data) => {
+  const result = reviewSchema.safeParse(data);
   return result.success ? result : { ...result, error: { ...result.error, message: formatIssues(result.error) } };
 };

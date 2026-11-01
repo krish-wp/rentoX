@@ -119,6 +119,22 @@ export default function BookingsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="truncate font-semibold text-foreground">{request.vehicle?.brand} {request.vehicle?.model}</h3>
                   <Badge variant={STATUS_VARIANT[request.status]}>{STATUS_LABELS[request.status]}</Badge>
+                  {request.status === "ACCEPTED" && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500 text-xs">★</span>
+                      {type === "sent" && request.ownerAverageRating ? (
+                        <>
+                          {request.ownerAverageRating.toFixed(1)}
+                          {request.ownerReviewCount && ` (${request.ownerReviewCount})`}
+                        </>
+                      ) : type === "received" && request.senderAverageRating ? (
+                        <>
+                          {request.senderAverageRating.toFixed(1)}
+                          {request.senderReviewCount && ` (${request.senderReviewCount})`}
+                        </>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
                 <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
