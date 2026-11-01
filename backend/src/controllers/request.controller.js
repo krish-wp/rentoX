@@ -174,10 +174,36 @@ export const getReceivedRequests = asyncHandler(async (req, res, next) => {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Get distinct sender IDs for grouped rating query
+  const senderIds = [...new Set(requests.map((r) => r.senderId))];
+
+  const senderRatings = await prisma.review.groupBy({
+    by: ['revieweeId'],
+    where: {
+      revieweeId: { in: senderIds },
+    },
+    _avg: { rating: true },
+    _count: true,
+  });
+
+  const ratingMap = {};
+  for (const r of senderRatings) {
+    ratingMap[r.revieweeId] = {
+      averageRating: Math.round((r._avg.rating || 0) * 10) / 10,
+      reviewCount: r._count,
+    };
+  }
+
+  const enrichedRequests = requests.map((r) => ({
+    ...r,
+    senderAverageRating: ratingMap[r.senderId]?.averageRating,
+    senderReviewCount: ratingMap[r.senderId]?.reviewCount,
+  }));
+
   res.status(200).json({
     success: true,
     count: requests.length,
-    data: requests,
+    data: enrichedRequests,
   });
 });
 
@@ -206,10 +232,36 @@ export const getSentRequests = asyncHandler(async (req, res, next) => {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Get distinct owner IDs for grouped rating query
+  const ownerIds = [...new Set(requests.map((r) => r.vehicle.ownerId))];
+
+  const ownerRatings = await prisma.review.groupBy({
+    by: ['revieweeId'],
+    where: {
+      revieweeId: { in: ownerIds },
+    },
+    _avg: { rating: true },
+    _count: true,
+  });
+
+  const ratingMap = {};
+  for (const r of ownerRatings) {
+    ratingMap[r.revieweeId] = {
+      averageRating: Math.round((r._avg.rating || 0) * 10) / 10,
+      reviewCount: r._count,
+    };
+  }
+
+  const enrichedRequests = requests.map((r) => ({
+    ...r,
+    ownerAverageRating: ratingMap[r.vehicle.ownerId]?.averageRating,
+    ownerReviewCount: ratingMap[r.vehicle.ownerId]?.reviewCount,
+  }));
+
   res.status(200).json({
     success: true,
     count: requests.length,
-    data: requests,
+    data: enrichedRequests,
   });
 });
 
