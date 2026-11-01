@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import type { Vehicle, VehicleFilters, PaginatedVehicles } from "@/types/vehicle";
+import type { Vehicle, VehicleDetailResponse, VehicleFilters, PaginatedVehicles } from "@/types/vehicle";
 
 export const getMyVehicles = async (): Promise<{ vehicles: Vehicle[] }> => {
   const response = await api.get<{ vehicles: Vehicle[] }>("/vehicles/mine");
@@ -21,8 +21,8 @@ export const getVehicles = async (filters: VehicleFilters = {}): Promise<Paginat
   return response.data;
 };
 
-export const getVehicle = async (id: string): Promise<{ vehicle: Vehicle }> => {
-  const response = await api.get<{ vehicle: Vehicle }>(`/vehicles/${id}`);
+export const getVehicle = async (id: string): Promise<VehicleDetailResponse> => {
+  const response = await api.get<VehicleDetailResponse>(`/vehicles/${id}`);
   return response.data;
 };
 

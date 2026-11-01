@@ -18,13 +18,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { VehicleImage } from "@/components/ui/vehicle-image";
+import { StarRating, ReviewCard } from "@/components/ui/star-rating";
 import { cn } from "@/lib/utils";
 import { getVehicle } from "@/services/vehicle.service";
+import { getVehicleReviews, createReview } from "@/services/review.service";
 import { sendRentalRequest } from "@/services/rental.service";
 import { useAuth } from "@/hooks/useAuth";
 import { bookingSchema, type BookingFormData, TEXTAREA_CLASS } from "@/lib/form-utils";
 import { getApiErrorMessage } from "@/types/api";
-import type { Vehicle } from "@/types/vehicle";
+import type { Vehicle, Review } from "@/types/vehicle";
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(true);
@@ -46,6 +48,11 @@ export default function VehicleDetailPage() {
   const vehicleId = typeof params.id === "string" ? params.id : "";
 
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [blockedDates, setBlockedDates] = useState<{ start: Date; end: Date }[]>([]);
+  const [vehicleReviews, setVehicleReviews] = useState<Review[]>([]);
+  const [isReviewSubmitting, setIsReviewSubmitting] = useState(false);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -84,10 +91,29 @@ export default function VehicleDetailPage() {
   useEffect(() => {
     if (!vehicleId) { setError("Invalid vehicle ID."); setIsLoading(false); return; }
     let cancelled = false;
-    getVehicle(vehicleId)
-      .then((data) => { if (!cancelled) setVehicle(data.vehicle); })
-      .catch(() => { if (!cancelled) setError("Vehicle not found."); })
-      .finally(() => { if (!cancelled) setIsLoading(false); });
+    const loadData = async () => {
+      try {
+        const data = await getVehicle(vehicleId);
+        if (!cancelled) {
+          setVehicle(data.vehicle);
+          setBlockedDates(
+            data.blockedDates.map((b) => ({
+              start: new Date(b.startDate),
+              end: new Date(b.endDate),
+            }))
+          );
+        }
+      } catch {
+        if (!cancelled) setError("Vehicle not found.");
+      }
+      try {
+        const reviews = await getVehicleReviews(vehicleId);
+        if (!cancelled) setVehicleReviews(reviews);
+      } catch {
+        // reviews are optional; ignore failure
+      }
+    };
+    loadData();
     return () => { cancelled = true; };
   }, [vehicleId]);
 
@@ -113,8 +139,34 @@ export default function VehicleDetailPage() {
     }
   };
 
+  const handleReviewSubmit = async () => {
+    if (!reviewRating || reviewRating < 1) return;
+    setIsReviewSubmitting(true);
+    try {
+      await createReview(vehicleId, { rating: reviewRating, comment: reviewComment || undefined });
+      setSuccess("Thank you for your review!");
+      toast.success("Review submitted");
+      setReviewRating(0);
+      setReviewComment("");
+      const updated = await getVehicleReviews(vehicleId);
+      setVehicleReviews(updated);
+    } catch (err) {
+      const msg = getApiErrorMessage(err, "Failed to submit review. Please try again.");
+      toast.error(msg);
+    } finally {
+      setIsReviewSubmitting(false);
+    }
+  };
+
   const isOwner = !!(user && vehicle?.ownerId && user.id === vehicle.ownerId);
   const canBook = !!vehicle && !isOwner && vehicle.isAvailable;
+
+  const averageRating =
+    vehicleReviews.length > 0
+      ? Math.round((vehicleReviews.reduce((sum, r) => sum + r.rating, 0) / vehicleReviews.length) * 10) / 10
+      : 0;
+  const userHasReviewed = vehicleReviews.some((r) => r.reviewer.id === user?.id);
+  const canReview = !!user && !isOwner && !userHasReviewed;
 
   if (!vehicleId) {
     return <div className="flex items-center justify-center py-12"><p className="text-destructive">Invalid vehicle ID.</p></div>;
@@ -188,14 +240,27 @@ export default function VehicleDetailPage() {
             <CalendarIcon className="ml-auto size-4 shrink-0 opacity-50" />
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="range"
-              defaultMonth={dateRange?.from}
-              selected={dateRange}
-              onSelect={handleDateRangeSelect}
-              numberOfMonths={isDesktop ? 2 : 1}
-              disabled={{ before: new Date() }}
-            />
+                          <Calendar
+                            mode="range"
+                            defaultMonth={dateRange?.from}
+                            selected={dateRange}
+                            onSelect={handleDateRangeSelect}
+                            numberOfMonths={isDesktop ? 2 : 1}
+                            disabled={(date) => {
+                              const isBeforeToday = date < new Date();
+                              const isBlocked = blockedDates.some((range) => {
+                                const start = range.start;
+                                const end = range.end;
+                                return date >= start && date <= end;
+                              });
+                              return isBeforeToday || isBlocked;
+                            }}
+                          />
+                          {blockedDates.length > 0 && (
+                            <p className="mt-2 text-xs text-muted-foreground text-center">
+                              Grey dates are already booked
+                            </p>
+                          )}
           </PopoverContent>
         </Popover>
         {(errors.startDate || errors.endDate) && (
@@ -260,7 +325,16 @@ export default function VehicleDetailPage() {
           </div>
 
           <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">{vehicle.brand} {vehicle.model}</h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl font-bold sm:text-3xl">{vehicle.brand} {vehicle.model}</h1>
+              {vehicleReviews.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-500">★</span>
+                  <span className="font-medium">{averageRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">({vehicleReviews.length})</span>
+                </div>
+              )}
+            </div>
             <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><Tag className="size-3.5" aria-hidden="true" />{vehicle.type}</span>
               {vehicle.plateNumber && <span className="tabular-nums">{vehicle.plateNumber}</span>}
@@ -292,6 +366,56 @@ export default function VehicleDetailPage() {
                 <p className="leading-relaxed text-muted-foreground">{vehicle.description}</p>
               </div>
             </>
+          )}
+
+          <Separator />
+          <div>
+            <h3 className="mb-2 font-semibold">Reviews ({vehicleReviews.length})</h3>
+            {vehicleReviews.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No reviews yet. Be the first to review this vehicle.</p>
+            ) : (
+              <div className="space-y-3">
+                {vehicleReviews.map((review) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {user && !isOwner && canReview && (
+            <div className="mt-6">
+              <Separator />
+              <h3 className="mb-3 font-semibold">Leave a Review</h3>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Your Rating</label>
+                  <StarRating
+                    rating={reviewRating}
+                    onChange={setReviewRating}
+                    size="md"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="reviewComment">Comment (optional)</Label>
+                  <textarea
+                    id="reviewComment"
+                    rows={3}
+                    placeholder="Share your experience..."
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  onClick={handleReviewSubmit}
+                  disabled={isReviewSubmitting || !reviewRating}
+                  className="w-full"
+                >
+                  {isReviewSubmitting ? "Submitting..." : "Submit Review"}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
 

@@ -113,8 +113,25 @@ const getVehicleById = asyncHandler(async (req, res) => {
     });
   }
 
+  const bookedRequests = await prisma.rentalRequest.findMany({
+    where: {
+      vehicleId: id,
+      status: 'ACCEPTED',
+    },
+    select: {
+      startDate: true,
+      endDate: true,
+    },
+  });
+
+  const blockedDates = bookedRequests.map((r) => ({
+    startDate: r.startDate.toISOString(),
+    endDate: r.endDate.toISOString(),
+  }));
+
   res.status(200).json({
     vehicle: existingVehicle,
+    blockedDates,
   });
 });
 

@@ -20,6 +20,33 @@ export interface Vehicle {
   };
 }
 
+export interface BlockedDateRange {
+  startDate: string;
+  endDate: string;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  reviewer: {
+    id: string;
+    userName: string;
+  };
+}
+
+export interface UserReviewStats {
+  averageRating: number;
+  reviewCount: number;
+  reviews: Review[];
+}
+
+export interface VehicleDetailResponse {
+  vehicle: Vehicle;
+  blockedDates: BlockedDateRange[];
+}
+
 export interface VehicleFilters {
   page?: number;
   limit?: number;
@@ -62,6 +89,10 @@ export interface RentalRequest {
     mobileNumber: string | null;
   };
   vehicle?: Vehicle;
+  senderAverageRating?: number;
+  senderReviewCount?: number;
+  ownerAverageRating?: number;
+  ownerReviewCount?: number;
 }
 
 export interface SendRentalRequest {
