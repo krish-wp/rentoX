@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -42,6 +43,7 @@ function calcDays(start: string, end: string) {
 
 export default function BookingsPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [sentRequests, setSentRequests] = useState<RentalRequest[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<RentalRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -153,7 +155,7 @@ export default function BookingsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 sm:flex-col sm:items-end">
-                {type === "received" && request.status === "PENDING" && (
+                {type === "received" && request.status === "PENDING" && user?.id && request.senderId !== user.id && (
                   <>
                     <Button size="sm" disabled={processingId === request.id} onClick={() => handleStatusUpdate(request.id, "ACCEPTED")}>
                       {processingId === request.id ? "..." : "Accept"}
