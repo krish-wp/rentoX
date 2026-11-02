@@ -111,6 +111,8 @@ export default function VehicleDetailPage() {
         if (!cancelled) setVehicleReviews(reviews);
       } catch {
         // reviews are optional; ignore failure
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     };
     loadData();
