@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Calendar, Car, MapPin, ShieldCheck } from "lucide-react";
+import { ArrowRight, Calendar, Car, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VehicleCard } from "@/components/ui/vehicle-card";
@@ -12,12 +12,6 @@ import Navbar from "@/components/navbar";
 import { getVehicles } from "@/services/vehicle.service";
 import { VEHICLE_TYPES } from "@/lib/constants";
 import type { Vehicle } from "@/types/vehicle";
-
-const STEPS = [
-  { number: "01", title: "Browse", desc: "Search by type, location, and price." },
-  { number: "02", title: "Book", desc: "Select dates and send a request." },
-  { number: "03", title: "Drive", desc: "Pick up the vehicle and go." },
-];
 
 const TRUST = [
   { title: "Verified owners", desc: "Every lister completes profile verification." },
@@ -29,13 +23,12 @@ export default function Home() {
   const reduceMotion = useReducedMotion();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     getVehicles({ limit: 6 })
       .then((data) => { if (!cancelled) setVehicles(data.vehicles); })
-      .catch(() => { if (!cancelled) setError(true); })
+      .catch(() => { if (!cancelled) setIsLoading(false); })
       .finally(() => { if (!cancelled) setIsLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -128,7 +121,7 @@ export default function Home() {
             <div className="flex flex-wrap items-center justify-between gap-6">
               {TRUST.map((item, i) => (
                 <div key={item.title} className="flex items-center gap-3 text-sm">
-                  <ShieldCheck className="size-4 text-primary" aria-hidden="true" />
+                  <MapPin className="size-4 text-primary" aria-hidden="true" />
                   <div>
                     <div className="text-sm font-semibold text-foreground">{item.title}</div>
                     <div className="text-xs text-muted-foreground">{item.desc}</div>
@@ -158,7 +151,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {vehicles.map((vehicle, i) => (
-                  <motion.div key={vehicle.id} {...fade(Number(i) * 0.05)}>
+                  <motion.div key={vehicle.id} {...fade(i * 0.05)}>
                     <VehicleCard vehicle={vehicle} />
                   </motion.div>
                 ))}

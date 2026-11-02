@@ -208,7 +208,7 @@ export default function VehicleDetailPage() {
   if (!vehicle) return null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:pb-16">
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:pb-16">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-6">
         <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
@@ -222,7 +222,7 @@ export default function VehicleDetailPage() {
         </ol>
       </nav>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
         {/* Left column — Hero image + specs */}
         <div className="space-y-8 lg:col-span-2">
           <div className="relative h-[520px] overflow-hidden rounded-lg">
@@ -250,8 +250,17 @@ export default function VehicleDetailPage() {
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold text-foreground tracking-tight">{vehicle.brand} {vehicle.model}</h1>
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">{vehicle.brand} {vehicle.model}</h1>
+              {vehicleReviews.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="text-yellow-500">★</span>
+                  <span className="font-medium">{averageRating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">({vehicleReviews.length})</span>
+                </div>
+              )}
+            </div>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
               <Tag className="size-3.5 text-primary" aria-hidden="true" />
               {vehicle.type}
               {vehicle.plateNumber && <span className="font-mono text-xs">{vehicle.plateNumber}</span>}

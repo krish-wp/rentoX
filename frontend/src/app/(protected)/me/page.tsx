@@ -11,17 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StarRating } from "@/components/ui/star-rating";
 import { getMyVehicles } from "@/services/vehicle.service";
 import { getSentRequests, getReceivedRequests } from "@/services/rental.service";
-import { getUserReviews } from "@/services/review.service";
+import { getUserReviews } from "@/services/rental.service";
 import type { User } from "@/types/auth";
 import type { UserReviewStats } from "@/types/vehicle";
-
-interface Stats {
-  vehicles: number | null;
-  sent: number | null;
-  received: number | null;
-}
 
 const IDENTITY_FIELDS = [
   { label: "Username", key: "userName" as const, icon: UserRound },
@@ -38,7 +33,9 @@ const ADDRESS_FIELDS = [
 export default function MePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [stats, setStats] = useState<Stats>({ vehicles: null, sent: null, received: null });
+  const [stats, setStats] = useState<{ vehicles: number | null; sent: number | null; received: number | null }>({
+    vehicles: null, sent: null, received: null,
+  });
   const [reviewStats, setReviewStats] = useState<UserReviewStats | null>(null);
 
   useEffect(() => {
@@ -121,20 +118,20 @@ export default function MePage() {
                 {initials || <UserRound className="size-8" aria-hidden="true" />}
               </div>
               <div className="min-w-0 pb-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="truncate text-xl font-semibold">{user?.userName || "—"}</h2>
-                {reviewStats?.reviewCount && reviewStats.reviewCount > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-500 text-xs">★</span>
-                    <span className="text-xs font-medium">{reviewStats.averageRating.toFixed(1)}</span>
-                    <span className="text-xs text-muted-foreground">({reviewStats.reviewCount})</span>
-                  </div>
-                )}
-                <Badge variant={user?.isProfileCompleted ? "success" : "warning"} className="gap-1">
-                  <BadgeCheck className="size-3" aria-hidden="true" />
-                  {user?.isProfileCompleted ? "Complete" : "Incomplete"}
-                </Badge>
-              </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-xl font-semibold">{user?.userName || "—"}</h2>
+                  {reviewStats?.reviewCount && reviewStats.reviewCount > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-yellow-500 text-xs">★</span>
+                      <span className="text-xs font-medium">{reviewStats.averageRating.toFixed(1)}</span>
+                      <span className="text-xs text-muted-foreground">({reviewStats.reviewCount})</span>
+                    </div>
+                  )}
+                  <Badge variant={user?.isProfileCompleted ? "success" : "warning"} className="gap-1">
+                    <BadgeCheck className="size-3" aria-hidden="true" />
+                    {user?.isProfileCompleted ? "Complete" : "Incomplete"}
+                  </Badge>
+                </div>
                 <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
               </div>
               <Link href="/me/edit" className="ml-auto pb-1">

@@ -60,7 +60,7 @@ function UserMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Account menu"
-        className="flex items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1.5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className="flex items-center gap-2 rounded-md border border-border/60 bg-card px-2.5 py-1.5 transition-all hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
       >
         <span className="flex size-6 items-center justify-center rounded-md bg-primary text-[10px] font-semibold text-primary-foreground">
           {initials}
@@ -72,7 +72,7 @@ function UserMenu({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-md border border-border bg-popover p-1 shadow-card"
+          className="absolute right-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-md border border-border bg-popover p-1 shadow-card animate-in fade-in zoom-in-95 duration-150"
         >
           <button
             type="button"

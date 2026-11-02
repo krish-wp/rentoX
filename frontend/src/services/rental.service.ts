@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import type { RentalRequest, SendRentalRequest } from "@/types/vehicle";
+import type { RentalRequest, SendRentalRequest, UserReviewStats } from "@/types/vehicle";
 
 interface RentalResponse {
   success: boolean;
@@ -52,5 +52,10 @@ export const getRequestById = async (requestId: string): Promise<RentalResponse>
 
 export const cancelRentalRequest = async (requestId: string): Promise<RentalResponse> => {
   const response = await api.put<RentalResponse>(`/rental-requests/${requestId}/cancel`);
+  return response.data;
+};
+
+export const getUserReviews = async (userId: string): Promise<UserReviewStats> => {
+  const response = await api.get<UserReviewStats>(`/users/${userId}/reviews`);
   return response.data;
 };
