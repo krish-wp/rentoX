@@ -36,9 +36,16 @@ describe("bookingSchema", () => {
   });
 
   it("accepts exactly 30 days", () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = today.toISOString().split("T")[0];
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + 30);
+    const endDateStr = endDate.toISOString().split("T")[0];
+
     const result = bookingSchema.safeParse({
-      startDate: "2026-11-01",
-      endDate: "2026-12-01",
+      startDate,
+      endDate: endDateStr,
     });
     expect(result.success).toBe(true);
   });

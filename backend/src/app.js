@@ -23,7 +23,17 @@ if (config.isProduction) {
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10kb' }));
 app.use(cors({
-  origin: config.isProduction ? config.frontendUrl : true,
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      config.frontendUrl,
+      "https://rento-x.vercel.app",
+    ].filter(Boolean);
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 }));
 app.use(cookieParser());

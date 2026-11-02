@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL:
+    typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, "") + "/api/v1"
+      : "/api/v1",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -13,11 +16,26 @@ let refreshPromise: Promise<string> | null = null;
 
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
+  if (typeof window !== "undefined") {
+    if (token) {
+      localStorage.setItem("rentox_access_token", token);
+    } else {
+      localStorage.removeItem("rentox_access_token");
+    }
+  }
 };
 
 export const getAccessToken = () => {
   return accessToken;
 };
+
+// Restore token from localStorage on module load
+if (typeof window !== "undefined") {
+  const stored = localStorage.getItem("rentox_access_token");
+  if (stored) {
+    accessToken = stored;
+  }
+}
 
 api.interceptors.request.use((config) => {
   if (accessToken) {
