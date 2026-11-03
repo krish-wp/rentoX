@@ -49,7 +49,7 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-medium text-primary transition-colors hover:underline">
+          <Link href="/auth/login" className="font-medium text-brand transition-colors hover:underline">
             Sign in
           </Link>
         </>
@@ -64,7 +64,7 @@ export default function RegisterPage() {
             type="text"
             placeholder="johndoe"
             autoComplete="username"
-            className="h-11"
+            
             aria-invalid={!!errors.username}
             {...register("username")}
           />
@@ -77,7 +77,7 @@ export default function RegisterPage() {
             type="email"
             placeholder="name@example.com"
             autoComplete="email"
-            className="h-11"
+            
             aria-invalid={!!errors.email}
             {...register("email")}
           />
@@ -89,14 +89,14 @@ export default function RegisterPage() {
             id="password"
             placeholder="Create a password"
             autoComplete="new-password"
-            className="h-11"
+            
             aria-invalid={!!errors.password}
             {...register("password")}
           />
           {errors.password && <p className="text-sm text-destructive" role="alert">{errors.password.message}</p>}
           <p className="text-xs text-muted-foreground">Must be at least 6 characters.</p>
         </div>
-        <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+        <Button type="submit"  disabled={isSubmitting}>
           {isSubmitting ? "Creating Account…" : "Create Account"}
         </Button>
       </form>

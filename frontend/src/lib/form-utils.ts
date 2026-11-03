@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { DISTRICTS_BY_STATE } from "@/lib/constants";
-export const SELECT_CLASS = "flex h-9 w-full rounded-lg border border-border/80 bg-transparent px-2.5 py-1 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-40";
+export const SELECT_CLASS = "flex h-10 w-full rounded-md border border-input bg-card px-2.5 py-2 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/15 disabled:cursor-not-allowed disabled:opacity-45";
 
-export const TEXTAREA_CLASS = "flex w-full rounded-lg border border-border/80 bg-transparent px-2.5 py-1 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-40";
+export const TEXTAREA_CLASS = "flex w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm tracking-[-0.01em] text-foreground transition-[color,box-shadow,border-color] duration-150 placeholder:text-muted-foreground/70 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/15 disabled:cursor-not-allowed disabled:opacity-45";
 
 export function formatPlateNumber(value: string): string {
   const stripped = value.replace(/\s/g, "").toUpperCase();

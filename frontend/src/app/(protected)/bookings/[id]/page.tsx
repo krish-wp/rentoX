@@ -165,7 +165,7 @@ export default function BookingDetailPage() {
             <div>
               <h2 className="text-lg font-semibold">{request.vehicle?.brand} {request.vehicle?.model}</h2>
               <p className="text-sm text-muted-foreground">{request.vehicle?.location} · {request.vehicle?.plateNumber}</p>
-              <p className="mt-2 text-sm font-medium tabular-nums text-primary">₹{request.vehicle?.pricePerDay}/day</p>
+              <p className="mt-2 font-mono text-sm font-medium text-brand">₹{request.vehicle?.pricePerDay}/day</p>
             </div>
           </div>
 

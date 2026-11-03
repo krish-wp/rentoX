@@ -17,7 +17,7 @@ import { VehicleImage } from "@/components/ui/vehicle-image";
 import { getSentRequests, getReceivedRequests, updateRequestStatus, deleteRentalRequest, cancelRentalRequest } from "@/services/rental.service";
 import { getApiErrorMessage } from "@/types/api";
 import type { RentalRequest, RentalStatus } from "@/types/vehicle";
-import { MapPin, Send, Inbox, CalendarDays } from "lucide-react";
+import { MapPin, Send, Inbox, CalendarDays, Star } from "lucide-react";
 
 const STATUS_VARIANT: Record<RentalStatus, "warning" | "success" | "destructive" | "secondary"> = {
   PENDING: "warning",
@@ -122,19 +122,23 @@ export default function BookingsPage() {
                   <h3 className="truncate font-semibold text-foreground">{request.vehicle?.brand} {request.vehicle?.model}</h3>
                   <Badge variant={STATUS_VARIANT[request.status]}>{STATUS_LABELS[request.status]}</Badge>
                   {request.status === "ACCEPTED" && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500 text-xs">★</span>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
                       {type === "sent" && request.ownerAverageRating ? (
-                        <>
+                        <span className="font-mono font-semibold text-foreground">
                           {request.ownerAverageRating.toFixed(1)}
-                          {request.ownerReviewCount && ` (${request.ownerReviewCount})`}
-                        </>
+                        </span>
                       ) : type === "received" && request.senderAverageRating ? (
-                        <>
+                        <span className="font-mono font-semibold text-foreground">
                           {request.senderAverageRating.toFixed(1)}
-                          {request.senderReviewCount && ` (${request.senderReviewCount})`}
-                        </>
+                        </span>
                       ) : null}
+                      {((type === "sent" && request.ownerReviewCount) ||
+                        (type === "received" && request.senderReviewCount)) && (
+                        <span>
+                          ({type === "sent" ? request.ownerReviewCount : request.senderReviewCount})
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -175,16 +179,24 @@ export default function BookingsPage() {
                     Cancel
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" className="text-primary hover:text-primary/80" onClick={() => router.push(`/bookings/${request.id}`)}>
+                <Button size="sm" variant="ghost" className="text-brand hover:text-brand/80" onClick={() => router.push(`/bookings/${request.id}`)}>
                   View
                 </Button>
               </div>
             </div>
-            <Separator className="my-3" />
-            <p className="text-sm text-muted-foreground tabular-nums">
-              ₹{request.vehicle?.pricePerDay}/day · Total: ₹
-              {request.vehicle?.pricePerDay ? request.vehicle.pricePerDay * calcDays(request.startDate, request.endDate) : "—"}
-            </p>
+            <Separator className="my-4" />
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="font-mono text-sm font-semibold">
+                ₹{request.vehicle?.pricePerDay?.toLocaleString("en-IN")}
+                <span className="ml-1 text-xs font-normal text-muted-foreground">/day</span>
+              </p>
+              <p className="font-mono text-sm text-muted-foreground">
+                Total ₹
+                {request.vehicle?.pricePerDay
+                  ? (request.vehicle.pricePerDay * calcDays(request.startDate, request.endDate)).toLocaleString("en-IN")
+                  : "—"}
+              </p>
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -192,8 +204,11 @@ export default function BookingsPage() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="text-2xl sm:text-3xl font-bold mb-8">My Bookings</h1>
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-9">
+        <p className="eyebrow">Trips</p>
+        <h1 className="mt-3">Your bookings</h1>
+      </header>
 
       {error && (
         <div className="mb-6">

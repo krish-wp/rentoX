@@ -16,7 +16,7 @@ const authMiddleware = asyncHandler((req, res, next) => {
     });
     req.user = decoded.userId;
     next();
-  } catch (error) {
+  } catch {
     throw new AppError('Invalid or expired token', 401);
   }
 });

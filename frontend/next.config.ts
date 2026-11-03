@@ -41,6 +41,17 @@ const backendUrl =
     : 'http://localhost:5000';
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: 'plus.unsplash.com' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: '*.amazonaws.com' },
+      { protocol: 'https', hostname: '*.cloudfront.net' },
+      { protocol: 'http', hostname: 'localhost' },
+    ],
+    formats: ['image/avif', 'image/webp'],
+  },
   async rewrites() {
     return [
       {

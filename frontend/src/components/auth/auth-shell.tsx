@@ -3,8 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface AuthShellProps {
@@ -14,68 +13,109 @@ interface AuthShellProps {
   footer?: React.ReactNode;
 }
 
+const POINTS = [
+  "Verified owners on every listing",
+  "Clear daily rates, no hidden fees",
+  "Two-way ratings after every trip",
+];
+
 export function AuthShell({ title, description, children, footer }: AuthShellProps) {
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="relative flex min-h-[calc(100svh-4rem)] items-center justify-center overflow-hidden bg-background px-4 py-12">
-      {/* Ambient background */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-[-20%] h-[480px] w-[720px] -translate-x-1/2 rounded-full bg-primary/12 blur-[120px]" />
-        <div className="absolute bottom-[-25%] right-[-10%] h-[380px] w-[480px] rounded-full bg-accent/15 blur-[110px]" />
-        <div
-          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.2]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, hsl(var(--border)/0.5) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)/0.5) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
-          }}
+    <div className="grid min-h-svh lg:grid-cols-[1.05fr_1fr]">
+      {/* Brand panel */}
+      <aside className="relative hidden overflow-hidden bg-neutral-950 lg:block">
+        <Image
+          src="/images/hero.webp"
+          alt=""
+          fill
+          priority
+          sizes="55vw"
+          className="object-cover object-[60%_center]"
         />
-      </div>
+        <div className="scrim-left absolute inset-0" />
+        <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/80 via-neutral-950/25 to-neutral-950/50" />
 
-      {/* Top chrome */}
-      <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-4 sm:px-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 rounded-lg text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+        <div className="relative flex h-full flex-col justify-between p-12 xl:p-16">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          >
+            <Image src="/logo.png" alt="" width={32} height={32} className="rounded-[7px]" />
+            <span className="font-display text-lg font-semibold tracking-[-0.035em] text-white">
+              rento<span className="text-brand">X</span>
+            </span>
+          </Link>
+
+          <div className="max-w-md">
+            <h2 className="text-white">
+              Get behind the wheel
+              <br />
+              in minutes.
+            </h2>
+            <ul className="mt-8 space-y-3">
+              {POINTS.map((point) => (
+                <li key={point} className="flex items-center gap-3 text-sm text-white/70">
+                  <span className="size-1.5 shrink-0 bg-brand" aria-hidden="true" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-white/40">
+            Peer-to-peer · India · Est. 2024
+          </p>
+        </div>
+      </aside>
+
+      {/* Form panel */}
+      <main className="relative flex items-center justify-center px-4 py-14 sm:px-8">
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-5 sm:px-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-md text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Back to home</span>
+          </Link>
+          <ThemeToggle />
+        </div>
+
+        <motion.div
+          className="w-full max-w-[400px]"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <ArrowLeft className="size-4" aria-hidden="true" /> Back to home
-        </Link>
-        <ThemeToggle />
-      </div>
+          <Link
+            href="/"
+            className="mb-10 inline-flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 lg:hidden"
+          >
+            <Image src="/logo.png" alt="" width={30} height={30} className="rounded-[7px]" />
+            <span className="font-display text-base font-semibold tracking-[-0.035em]">
+              rento<span className="text-brand">X</span>
+            </span>
+          </Link>
 
-      <motion.div
-        className="w-full max-w-md"
-        initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <Card className="border-border/60 shadow-[0_8px_40px_-12px_hsl(0_0%_0%_/_0.15)] dark:shadow-[0_8px_40px_-12px_hsl(0_0%_0%_/_0.6)]">
-          <CardHeader className="items-center space-y-3 pb-2 text-center">
-            <div className="flex w-full justify-center">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-              >
-                <Image src="/logo.png" alt="" width={36} height={36} className="rounded-lg" />
-                <span className="text-xl font-bold text-primary">rentoX</span>
-              </Link>
-            </div>
-            <div>
-              <h1 className="font-heading text-xl font-semibold leading-snug tracking-[-0.01em] text-foreground">
-                {title}
-              </h1>
-              <CardDescription className="mt-1.5">{description}</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">{children}</CardContent>
-        </Card>
+          <p className="eyebrow">Account</p>
+          <h1 className="mt-3 text-[1.75rem] leading-tight">{title}</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
 
-        {footer && (
-          <div className="mt-5 text-center text-sm text-muted-foreground">{footer}</div>
-        )}
-      </motion.div>
+          <div className="mt-8">{children}</div>
+
+          {footer && (
+            <div className="mt-7 flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground">
+              {footer}
+            </div>
+          )}
+        </motion.div>
+      </main>
     </div>
   );
+}
+
+export function AuthArrow() {
+  return <ArrowRight className="size-4" aria-hidden="true" />;
 }

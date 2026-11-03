@@ -158,11 +158,12 @@ function VehiclesContent() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Browse Vehicles</h1>
+          <p className="eyebrow">The fleet</p>
+          <h1 className="mt-3">Browse vehicles</h1>
           {!isLoading && !error && (
-            <p className="mt-1 text-sm text-muted-foreground tabular-nums" role="status" aria-live="polite">
+            <p className="mt-2 font-mono text-xs text-muted-foreground" role="status" aria-live="polite">
               {pagination.total} vehicle{pagination.total === 1 ? "" : "s"} found
             </p>
           )}
@@ -178,7 +179,7 @@ function VehiclesContent() {
           <SlidersHorizontal aria-hidden="true" />
           Filters
           {activeChips.length > 0 && (
-            <Badge variant="default" className="ml-1 h-5 min-w-5 px-1.5">{activeChips.length}</Badge>
+            <Badge variant="brand" className="ml-1 h-5 min-w-5 px-1.5">{activeChips.length}</Badge>
           )}
         </Button>
       </div>
@@ -188,7 +189,12 @@ function VehiclesContent() {
         <button
           type="button"
           onClick={() => applyFilters({ type: "", location, minPrice, maxPrice, q, sort })}
-          className={`rounded-full border px-3.5 py-1.5 text-sm transition-all ${!type ? "border-primary/40 bg-primary/10 font-medium text-primary" : "border-border/70 text-muted-foreground hover:border-primary/30 hover:text-primary"}`}
+          aria-pressed={!type}
+          className={`rounded-md border px-3.5 py-1.5 text-sm transition-colors ${
+            !type
+              ? "border-brand/40 bg-brand/10 font-medium text-brand"
+              : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+          }`}
         >
           All
         </button>
@@ -197,14 +203,19 @@ function VehiclesContent() {
             key={t}
             type="button"
             onClick={() => applyFilters({ type: type === t ? "" : t, location, minPrice, maxPrice, q, sort })}
-            className={`rounded-full border px-3.5 py-1.5 text-sm transition-all ${type === t ? "border-primary/40 bg-primary/10 font-medium text-primary" : "border-border/70 text-muted-foreground hover:border-primary/30 hover:text-primary"}`}
+            aria-pressed={type === t}
+            className={`rounded-md border px-3.5 py-1.5 text-sm transition-colors ${
+              type === t
+                ? "border-brand/40 bg-brand/10 font-medium text-brand"
+                : "border-border text-muted-foreground hover:border-foreground/20 hover:text-foreground"
+            }`}
           >
             {t}
           </button>
         ))}
       </div>
 
-      <form onSubmit={handleSearch} className={`mb-8 rounded-xl border border-border/60 bg-card p-5 shadow-card lg:block ${filtersOpen ? "block" : "hidden"}`}>
+      <form onSubmit={handleSearch} className={`mb-8 rounded-xl border border-border bg-card p-5 shadow-card lg:block ${filtersOpen ? "block" : "hidden"}`}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="q">Search</Label>
@@ -276,7 +287,7 @@ function VehiclesContent() {
               key={chip.key}
               type="button"
               onClick={() => removeFilter(chip.key)}
-              className="group inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 py-1 pl-3 pr-2 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+              className="group inline-flex items-center gap-1.5 rounded-md border border-brand/30 bg-brand/10 py-1 pl-2.5 pr-2 text-xs font-medium text-brand transition-colors hover:bg-brand/20"
               aria-label={`Remove filter ${chip.label}`}
             >
               {chip.label}

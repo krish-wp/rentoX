@@ -1,5 +1,4 @@
 import express from 'express';
-import prisma from './lib/prisma.js';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
@@ -8,7 +7,6 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import config from './config/constants.js';
 import {
-  authLimiter,
   globalLimiter,
   vehicleLimiter,
   requestLimiter,
@@ -22,16 +20,23 @@ if (config.isProduction) {
 
 app.use(morgan(config.isProduction ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10kb' }));
+const isLocalhostOrigin = (origin) =>
+  /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+
+const allowedOrigins = [
+  config.frontendUrl,
+  ...config.frontendUrls,
+  'https://rento-x.vercel.app',
+].filter(Boolean);
+
 app.use(cors({
   origin: (origin, callback) => {
-    const allowedOrigins = [
-      config.frontendUrl,
-      "https://rento-x.vercel.app",
-    ].filter(Boolean);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
+    } else if (config.isDevelopment && isLocalhostOrigin(origin)) {
+      callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -55,13 +60,21 @@ app.use('/api/v1', reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err);
-  const statusCode = err.statusCode || 500;
-  const isOperational = err.isOperational === true || err.expose === true;
+  const isCorsError = err.message === 'Not allowed by CORS';
+  const statusCode = isCorsError ? 403 : err.statusCode || 500;
+  const isOperational =
+    isCorsError || err.isOperational === true || err.expose === true;
   const message =
     isOperational || config.isDevelopment
       ? err.message || 'Internal Server Error'
       : 'Internal Server Error';
+
+  if (statusCode >= 500) {
+    console.error(`[${req.method} ${req.originalUrl}]`, err);
+  } else if (config.isDevelopment) {
+    console.warn(`[${req.method} ${req.originalUrl}] ${statusCode} ${message}`);
+  }
+
   res.status(statusCode).json({
     message,
   });

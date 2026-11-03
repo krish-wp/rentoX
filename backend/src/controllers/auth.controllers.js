@@ -245,7 +245,7 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
     decoded = jwt.verify(refreshToken, config.jwtRefreshSecret, {
       algorithms: ['HS256'],
     });
-  } catch (error) {
+  } catch {
     throw new AppError('Invalid or expired refresh token', 401);
   }
   const userId = decoded.userId;

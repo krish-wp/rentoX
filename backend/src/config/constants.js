@@ -11,6 +11,10 @@ const config = {
   databaseUrl: process.env.DATABASE_URL,
 
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+  frontendUrls: (process.env.FRONTEND_URLS || '')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean),
 
   jwtSecret: process.env.JWT_SECRET,
   jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,

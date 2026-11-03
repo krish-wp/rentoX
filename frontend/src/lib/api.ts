@@ -44,7 +44,17 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-const PUBLIC_AUTH_ENDPOINTS = ["/auth/login", "/auth/register", "/auth/verify-otp"];
+const PUBLIC_AUTH_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/verify-otp",
+  "/auth/me",
+];
+
+const PROTECTED_PATHS = ["/vehicles", "/bookings", "/me"];
+
+const isProtectedPath = (pathname: string) =>
+  PROTECTED_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 api.interceptors.response.use(
   (response) => response,
@@ -55,7 +65,11 @@ api.interceptors.response.use(
       error.response?.status === 403 &&
       error.response?.data?.message === "Please complete your profile first"
     ) {
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/me/edit")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/me/edit") &&
+        isProtectedPath(window.location.pathname)
+      ) {
         window.location.href = "/me/edit";
       }
       return Promise.reject(error);
@@ -97,7 +111,11 @@ api.interceptors.response.use(
         return data.accessToken as string;
       } catch {
         setAccessToken(null);
-        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/auth/")) {
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/auth/") &&
+          isProtectedPath(window.location.pathname)
+        ) {
           window.location.href = "/auth/login";
         }
         throw new Error("Token refresh failed");

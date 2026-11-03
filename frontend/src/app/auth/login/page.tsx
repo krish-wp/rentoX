@@ -66,7 +66,7 @@ function LoginForm() {
       footer={
         <>
           Don&apos;t have an account?{" "}
-          <Link href="/auth/register" className="font-medium text-primary transition-colors hover:underline">
+          <Link href="/auth/register" className="font-medium text-brand transition-colors hover:underline">
             Sign up
           </Link>
         </>
@@ -81,7 +81,7 @@ function LoginForm() {
             type="email"
             placeholder="name@example.com"
             autoComplete="email"
-            className="h-11"
+            
             aria-invalid={!!errors.email}
             {...register("email")}
           />
@@ -93,13 +93,13 @@ function LoginForm() {
             id="password"
             placeholder="Enter your password"
             autoComplete="current-password"
-            className="h-11"
+            
             aria-invalid={!!errors.password}
             {...register("password")}
           />
           {errors.password && <p className="text-sm text-destructive" role="alert">{errors.password.message}</p>}
         </div>
-        <Button type="submit" className="h-11 w-full" disabled={isSubmitting}>
+        <Button type="submit"  disabled={isSubmitting}>
           {isSubmitting ? "Signing In…" : "Sign In"}
         </Button>
       </form>

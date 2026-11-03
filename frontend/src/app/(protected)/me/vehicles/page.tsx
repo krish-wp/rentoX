@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
 import { VehicleImage } from "@/components/ui/vehicle-image";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Car } from "lucide-react";
+import { Car, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { getMyVehicles, deleteVehicle, updateVehicleAvailability } from "@/services/vehicle.service";
 import { getApiErrorMessage } from "@/types/api";
@@ -60,11 +60,14 @@ export default function MyVehiclesPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em]">My Vehicles</h1>
-        <Link href="/vehicles/new"><Button>Add Vehicle</Button></Link>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-9 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow">Garage</p>
+          <h1 className="mt-3">My fleet</h1>
+        </div>
+        <Link href="/vehicles/new"><Button><Plus aria-hidden="true" /> Add vehicle</Button></Link>
+      </header>
 
       {error && <Alert variant="error">{error}</Alert>}
 
@@ -107,7 +110,7 @@ export default function MyVehiclesPage() {
       ) : (
         <div className="space-y-4">
           {vehicles.map((vehicle) => (
-            <Card key={vehicle.id} className="transition-shadow hover:shadow-md">
+            <Card key={vehicle.id} className="rounded-xl border border-border bg-card shadow-card transition-shadow hover:shadow-lift">
               <CardContent className="p-5">
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:w-32">
@@ -122,25 +125,25 @@ export default function MyVehiclesPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="truncate text-lg font-semibold">{vehicle.brand} {vehicle.model}</h3>
-                        <p className="text-sm text-muted-foreground">{vehicle.type} · {vehicle.plateNumber}</p>
+                        <h3 className="truncate font-display text-base font-semibold tracking-[-0.02em]">{vehicle.brand} {vehicle.model}</h3>
+                        <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{vehicle.type} · {vehicle.plateNumber}</p>
                       </div>
                       <Badge variant={vehicle.isAvailable ? "success" : "destructive"} className="shrink-0">
                         {vehicle.isAvailable ? "Available" : "Unavailable"}
                       </Badge>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{vehicle.location}</p>
-                    <p className="mt-1 font-medium tabular-nums">₹{vehicle.pricePerDay}/day</p>
+                    <p className="mt-2 text-sm text-muted-foreground">{vehicle.location}</p>
+                    <p className="mt-1.5 font-mono text-sm font-semibold">₹{vehicle.pricePerDay.toLocaleString("en-IN")}<span className="ml-1 text-xs font-normal text-muted-foreground">/day</span></p>
                   </div>
                 </div>
-                <div className="mt-5 flex flex-wrap gap-3 border-t pt-4">
+                <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
                   <Link href={`/vehicles/${vehicle.id}`}><Button size="sm" variant="outline">View</Button></Link>
                   <Link href={`/me/vehicles/${vehicle.id}/edit`}><Button size="sm" variant="outline">Edit</Button></Link>
                   <Button size="sm" variant="ghost" disabled={processingId === vehicle.id} onClick={() => handleToggleAvailability(vehicle)}>
                     {processingId === vehicle.id ? "..." : vehicle.isAvailable ? "Mark Unavailable" : "Mark Available"}
                   </Button>
                   <div className="flex-1" />
-                  <Button size="sm" variant="destructive" disabled={processingId === vehicle.id} onClick={() => setDeleteTarget(vehicle)}>
+                  <Button size="sm" variant="destructive-outline" disabled={processingId === vehicle.id} onClick={() => setDeleteTarget(vehicle)}>
                     {processingId === vehicle.id ? "..." : "Delete"}
                   </Button>
                 </div>

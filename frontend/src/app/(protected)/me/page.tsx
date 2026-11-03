@@ -4,19 +4,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { UserRound, Pencil, LogOut, Mail, Phone, MapPin, BadgeCheck, Car, Inbox, Send, Star } from "lucide-react";
+import {
+  UserRound,
+  Pencil,
+  LogOut,
+  Mail,
+  Phone,
+  MapPin,
+  BadgeCheck,
+  Car,
+  Inbox,
+  Send,
+  Star,
+  ArrowUpRight,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StarRating } from "@/components/ui/star-rating";
 import { getMyVehicles } from "@/services/vehicle.service";
-import { getSentRequests, getReceivedRequests } from "@/services/rental.service";
-import { getUserReviews } from "@/services/rental.service";
+import { getSentRequests, getReceivedRequests, getUserReviews } from "@/services/rental.service";
 import type { User } from "@/types/auth";
 import type { UserReviewStats } from "@/types/vehicle";
+
+type StatValue = number | string | null;
 
 const IDENTITY_FIELDS = [
   { label: "Username", key: "userName" as const, icon: UserRound },
@@ -33,8 +45,10 @@ const ADDRESS_FIELDS = [
 export default function MePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [stats, setStats] = useState<{ vehicles: number | null; sent: number | null; received: number | null }>({
-    vehicles: null, sent: null, received: null,
+  const [stats, setStats] = useState<{ vehicles: StatValue; sent: StatValue; received: StatValue }>({
+    vehicles: null,
+    sent: null,
+    received: null,
   });
   const [reviewStats, setReviewStats] = useState<UserReviewStats | null>(null);
 
@@ -53,19 +67,22 @@ export default function MePage() {
         sent: sent.status === "fulfilled" ? sent.value.count : null,
         received: received.status === "fulfilled" ? received.value.count : null,
       });
-      if (reviews.status === "fulfilled") {
-        setReviewStats(reviews.value);
-      }
+      if (reviews.status === "fulfilled") setReviewStats(reviews.value);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   const handleLogout = async () => {
     try {
       await logout();
       toast.success("Signed out");
-    } catch { /* ignore */ }
-    finally { router.push("/auth/login"); }
+    } catch {
+      /* ignore */
+    } finally {
+      router.push("/auth/login");
+    }
   };
 
   const initials = (user?.userName || "?")
@@ -76,102 +93,108 @@ export default function MePage() {
 
   const renderField = (
     field: { label: string; key: keyof User; icon: typeof Mail; fallback?: string },
-    last: boolean
   ) => {
     const value: unknown = user?.[field.key];
     const display =
       typeof value === "boolean"
-        ? value ? "Yes" : "No"
+        ? value
+          ? "Yes"
+          : "No"
         : String(value ?? "") || field.fallback || "—";
     const Icon = field.icon;
     return (
-      <div key={field.key} className={`flex items-center gap-3 py-3 ${last ? "" : "border-b border-border/40"}`}>
-        <Icon className="size-4 shrink-0 text-primary" aria-hidden="true" />
-        <span className="text-muted-foreground">{field.label}</span>
-        <span className="ml-auto break-all text-right font-medium">
+      <div className="flex items-baseline justify-between gap-6 border-b border-border py-3.5 last:border-b-0">
+        <dt className="eyebrow flex items-center gap-2">
+          <Icon className="size-3.5" aria-hidden="true" />
+          {field.label}
+        </dt>
+        <dd className="min-w-0 break-all text-right text-sm font-medium">
           {field.key === "email" && typeof value === "string" && value ? (
-            <a href={`mailto:${value}`} className="transition-colors hover:text-primary">{value}</a>
+            <a href={`mailto:${value}`} className="transition-colors hover:text-brand">
+              {value}
+            </a>
           ) : field.key === "mobileNumber" && typeof value === "string" && value ? (
-            <a href={`tel:${value}`} className="tabular-nums transition-colors hover:text-primary">{value}</a>
+            <a href={`tel:${value}`} className="tabular-nums transition-colors hover:text-brand">
+              {value}
+            </a>
           ) : (
             display
           )}
-        </span>
+        </dd>
       </div>
     );
   };
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold sm:text-3xl">My Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Manage your account details</p>
-      </div>
+  const rating =
+    reviewStats && reviewStats.reviewCount > 0 ? reviewStats.averageRating.toFixed(1) : null;
 
-      <div className="space-y-6">
-        {/* Identity card */}
-        <Card className="overflow-hidden">
-          <div className="h-20 bg-gradient-to-r from-primary/20 via-primary/8 to-accent/20" aria-hidden="true" />
-          <CardContent className="-mt-10 pb-6">
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex size-20 items-center justify-center rounded-2xl border-4 border-background bg-primary text-xl font-bold text-primary-foreground shadow-lg">
-                {initials || <UserRound className="size-8" aria-hidden="true" />}
-              </div>
-              <div className="min-w-0 pb-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-xl font-semibold">{user?.userName || "—"}</h2>
-                  {reviewStats?.reviewCount && reviewStats.reviewCount > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500 text-xs">★</span>
-                      <span className="text-xs font-medium">{reviewStats.averageRating.toFixed(1)}</span>
-                      <span className="text-xs text-muted-foreground">({reviewStats.reviewCount})</span>
-                    </div>
-                  )}
-                  <Badge variant={user?.isProfileCompleted ? "success" : "warning"} className="gap-1">
-                    <BadgeCheck className="size-3" aria-hidden="true" />
-                    {user?.isProfileCompleted ? "Complete" : "Incomplete"}
-                  </Badge>
-                </div>
-                <p className="truncate text-sm text-muted-foreground">{user?.email}</p>
-              </div>
-              <Link href="/me/edit" className="ml-auto pb-1">
-                <Button variant="outline" size="sm"><Pencil aria-hidden="true" /> Edit</Button>
-              </Link>
+  const statCards = [
+    { label: "Vehicles listed", value: stats.vehicles, icon: Car, href: "/me/vehicles" },
+    { label: "Requests sent", value: stats.sent, icon: Send, href: "/bookings" },
+    { label: "Requests received", value: stats.received, icon: Inbox, href: "/bookings" },
+    { label: "Member rating", value: rating, icon: Star, href: "/bookings" },
+  ] as const;
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-10">
+        <p className="eyebrow">Account</p>
+        <h1 className="mt-3">Your profile</h1>
+      </header>
+
+      <div className="space-y-8">
+        {/* Identity */}
+        <Card className="rounded-xl border border-border bg-card shadow-card">
+          <CardContent className="flex flex-wrap items-center gap-5 p-6">
+            <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-semibold tracking-tight text-primary-foreground">
+              {initials || <UserRound className="size-7" aria-hidden="true" />}
             </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h2 className="truncate text-xl">{user?.userName || "—"}</h2>
+                <Badge variant={user?.isProfileCompleted ? "success" : "warning"}>
+                  {user?.isProfileCompleted ? "Verified" : "Incomplete"}
+                </Badge>
+              </div>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{user?.email}</p>
+              {reviewStats && reviewStats.reviewCount > 0 && (
+                <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
+                  <span className="font-mono font-semibold text-foreground">
+                    {reviewStats.averageRating.toFixed(1)}
+                  </span>
+                  <span>
+                    from {reviewStats.reviewCount}{" "}
+                    {reviewStats.reviewCount === 1 ? "review" : "reviews"}
+                  </span>
+                </div>
+              )}
+            </div>
+            <Link href="/me/edit">
+              <Button variant="outline" size="sm">
+                <Pencil aria-hidden="true" /> Edit profile
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {(
-            [
-              { label: "Vehicles Listed", value: stats.vehicles, icon: Car, href: "/me/vehicles" },
-              { label: "Requests Sent", value: stats.sent, icon: Send, href: "/bookings" },
-              { label: "Requests Received", value: stats.received, icon: Inbox, href: "/bookings" },
-              {
-                label: "Member Rating",
-                value: reviewStats?.reviewCount && reviewStats.reviewCount > 0 ? reviewStats.averageRating.toFixed(1) : null,
-                icon: Star,
-                href: "/bookings",
-              },
-            ] as const
-          ).map((stat) => {
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {statCards.map((stat) => {
             const Icon = stat.icon;
             return (
               <Link key={stat.label} href={stat.href} className="group">
-                <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-                  <CardContent className="flex items-center gap-4 p-5">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                      <Icon className="size-5 text-yellow-500" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0">
-                      {stat.value === null ? (
-                        <Skeleton className="h-7 w-10" />
-                      ) : (
-                        <p className="text-2xl font-bold tabular-nums leading-none">{stat.value}</p>
-                      )}
-                      <p className="mt-1.5 truncate text-sm text-muted-foreground">{stat.label}</p>
-                    </div>
+                <Card className="h-full rounded-xl border border-border bg-card shadow-card transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-foreground/15 group-hover:shadow-lift">
+                  <CardContent className="p-5">
+                    <Icon className="size-4 text-brand" aria-hidden="true" />
+                    {stat.value === null ? (
+                      <Skeleton className="mt-4 h-7 w-12" />
+                    ) : (
+                      <p className="mt-4 font-mono text-2xl font-semibold tracking-tight">
+                        {stat.value}
+                      </p>
+                    )}
+                    <p className="mt-1.5 text-xs text-muted-foreground">{stat.label}</p>
                   </CardContent>
                 </Card>
               </Link>
@@ -179,55 +202,55 @@ export default function MePage() {
           })}
         </div>
 
-        {/* Identity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <UserRound className="size-4 text-primary" aria-hidden="true" /> Account Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {IDENTITY_FIELDS.map((f, i) => renderField(f, i === IDENTITY_FIELDS.length - 1))}
-          </CardContent>
-        </Card>
+        {/* Details */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card className="rounded-xl border border-border bg-card shadow-card">
+            <CardContent className="p-6">
+              <p className="eyebrow mb-3">Account details</p>
+              <dl>{IDENTITY_FIELDS.map(renderField)}</dl>
+            </CardContent>
+          </Card>
 
-        {/* Address */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MapPin className="size-4 text-primary" aria-hidden="true" /> Address
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {ADDRESS_FIELDS.map((f, i) => renderField(f, i === ADDRESS_FIELDS.length - 1))}
-          </CardContent>
-        </Card>
+          <Card className="rounded-xl border border-border bg-card shadow-card">
+            <CardContent className="p-6">
+              <p className="eyebrow mb-3">Address</p>
+              <dl>{ADDRESS_FIELDS.map(renderField)}</dl>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick links */}
-        <Card>
-          <CardContent className="space-y-1 pt-6">
-            <Link
-              href="/me/vehicles"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              <Car className="size-4 text-primary" aria-hidden="true" />
-              My Vehicles
-              <span className="ml-auto text-muted-foreground">→</span>
-            </Link>
-            <Separator />
-            <Link
-              href="/bookings"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-            >
-              <BadgeCheck className="size-4 text-primary" aria-hidden="true" />
-              My Bookings
-              <span className="ml-auto text-muted-foreground">→</span>
-            </Link>
+        <Card className="rounded-xl border border-border bg-card shadow-card">
+          <CardContent className="divide-y divide-border p-2">
+            {[
+              { href: "/me/vehicles", label: "My fleet", description: "Manage the vehicles you have listed" },
+              { href: "/bookings", label: "Bookings", description: "Requests you sent and received" },
+              { href: "/vehicles/new", label: "List a new vehicle", description: "Put an idle car to work" },
+            ].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="group flex items-center gap-4 rounded-lg px-4 py-4 transition-colors hover:bg-accent"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{link.label}</p>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{link.description}</p>
+                </div>
+                <ArrowUpRight
+                  className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  aria-hidden="true"
+                />
+              </Link>
+            ))}
           </CardContent>
         </Card>
 
-        <Button variant="outline" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
-          <LogOut aria-hidden="true" /> Logout
+        <Button
+          variant="destructive-outline"
+          className="w-full justify-center"
+          onClick={handleLogout}
+        >
+          <LogOut aria-hidden="true" /> Log out
         </Button>
       </div>
     </div>

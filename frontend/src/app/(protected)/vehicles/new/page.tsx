@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { createVehicle } from "@/services/vehicle.service";
@@ -49,10 +49,14 @@ export default function AddVehiclePage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto py-12 px-4 sm:px-6">
-      <Card>
-        <CardHeader><CardTitle>Add New Vehicle</CardTitle></CardHeader>
-        <CardContent className="pt-6">
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-9">
+        <p className="eyebrow">Garage</p>
+        <h1 className="mt-3">List a vehicle</h1>
+      </header>
+
+      <Card className="rounded-xl border border-border bg-card shadow-card">
+        <CardContent className="p-6">
           {error && <Alert variant="error">{error}</Alert>}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

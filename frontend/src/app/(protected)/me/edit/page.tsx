@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useAuth } from "@/hooks/useAuth";
@@ -75,17 +75,27 @@ export default function EditProfilePage() {
   if (!user) return <div className="flex items-center justify-center py-12"><p className="text-muted-foreground" role="status" aria-live="polite">Loading profile...</p></div>;
 
   return (
-    <div className="max-w-lg mx-auto py-12 px-4 sm:px-6">
-      <Card>
-        <CardHeader><CardTitle>Edit Profile</CardTitle></CardHeader>
-        <CardContent className="pt-6">
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+      <header className="mb-9">
+        <p className="eyebrow">Account</p>
+        <h1 className="mt-3">Edit profile</h1>
+      </header>
+
+      <Card className="rounded-xl border border-border bg-card shadow-card">
+        <CardContent className="p-6">
           {error && <Alert variant="error">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
 
-          <div className="mb-5 p-4 bg-muted rounded-lg text-sm space-y-2">
-            <p><span className="text-muted-foreground">Username:</span> {user.userName}</p>
-            <p><span className="text-muted-foreground">Email:</span> {user.email}</p>
-          </div>
+          <dl className="mb-7 space-y-3 border-b border-border pb-6">
+            <div className="flex items-baseline justify-between gap-6">
+              <dt className="eyebrow">Username</dt>
+              <dd className="text-sm font-medium">{user.userName}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-6">
+              <dt className="eyebrow">Email</dt>
+              <dd className="text-sm font-medium">{user.email}</dd>
+            </div>
+          </dl>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
@@ -150,8 +160,8 @@ export default function EditProfilePage() {
               {errors.pincode && <p className="text-sm text-destructive" role="alert">{errors.pincode.message}</p>}
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save Changes"}</Button>
+            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? "Saving…" : "Save changes"}</Button>
               <Button type="button" variant="outline" onClick={() => router.push("/me")}>Cancel</Button>
             </div>
           </form>
