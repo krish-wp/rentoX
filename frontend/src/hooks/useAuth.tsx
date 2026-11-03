@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, createContext, useContext } from "react";
 import type { ReactNode } from "react";
 import type { User } from "@/types/auth";
-import { setAccessToken } from "@/lib/api";
+import { setAccessToken, getAccessToken } from "@/lib/api";
 import * as authService from "@/services/auth.service";
 import axios from "axios";
 
@@ -21,7 +21,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    // During SSR we don't know yet; start loading.
+    if (typeof window === "undefined") return true;
+    // No token → nothing to load → not loading.
+    // Has token → we'll load the profile → loading.
+    return !!localStorage.getItem("rentox_access_token");
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!getAccessToken());
 
   const fetchUser = useCallback(async () => {
     try {
@@ -48,15 +55,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.getItem("rentox_access_token");
 
     if (!hasToken) {
-      setIsLoading(false);
+      // isLoading already initialized to false above; nothing to do.
       return;
     }
 
     authService.getProfile()
-      .then(({ user }) => { if (!cancelled) setUser(user); })
+      .then(({ user }) => { if (!cancelled) { setUser(user); setIsAuthenticated(true); } })
       .catch((err) => {
         if (cancelled) return;
         setUser(null);
+        setIsAuthenticated(false);
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           setAccessToken(null);
         }
@@ -69,13 +77,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const data = await authService.login({ email, password });
     setAccessToken(data.accessToken ?? null);
+    setIsAuthenticated(!!data.accessToken);
+    // Login succeeded — we have a valid access token. Try to load the
+    // profile, but never let a profile-fetch failure undo authentication.
     try {
       await fetchUser();
     } catch {
-      setAccessToken(null);
-      throw new Error("Login succeeded but failed to load profile. Please try again.");
+      /* profile fetch failed; user is still authenticated */
     }
-  }, [fetchUser]);
+  }, [fetchUser, setIsAuthenticated]);
 
   const register = useCallback(async (username: string, email: string, password: string) => {
     await authService.register({ username, email, password });
@@ -86,18 +96,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     finally {
       setAccessToken(null);
       setUser(null);
+      setIsAuthenticated(false);
     }
-  }, []);
+  }, [setIsAuthenticated]);
 
   const value = useMemo(() => ({
     user,
-    isAuthenticated: !!user,
+    isAuthenticated,
     isLoading,
     login,
     register,
     logout,
     fetchUser,
-  }), [user, isLoading, login, register, logout, fetchUser]);
+  }), [user, isLoading, isAuthenticated, login, register, logout, fetchUser]);
 
   return (
     <AuthContext.Provider value={value}>
