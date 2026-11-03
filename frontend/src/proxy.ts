@@ -1,20 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const protectedPaths = ["/vehicles", "/bookings", "/me"];
-
+// NOTE: Do NOT redirect to login based on the backend refresh-token cookie here.
+// That cookie is httpOnly and set on the backend domain, so the Next.js
+// middleware server never receives it. Authentication is enforced client-side
+// by ProtectedRoute, which reads the access token from localStorage.
 export function proxy(request: NextRequest) {
-  const refreshToken = request.cookies.get("token");
-  const { pathname } = request.nextUrl;
-
-  const isProtected = protectedPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
-
-  if (isProtected && !refreshToken) {
-    const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
   return NextResponse.next();
 }
 

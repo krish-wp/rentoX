@@ -81,14 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await authService.login({ email, password });
     setAccessToken(data.accessToken ?? null);
     setIsAuthenticated(!!data.accessToken);
-    // Login succeeded — we have a valid access token. Try to load the
-    // profile, but never let a profile-fetch failure undo authentication.
-    try {
-      await fetchUser();
-    } catch {
-      /* profile fetch failed; user is still authenticated */
-    }
-  }, [fetchUser, setIsAuthenticated]);
+    // Login succeeded — we have a valid access token. Profile is loaded
+    // on mount of the target page; never let a profile-fetch failure undo
+    // authentication.
+  }, [setIsAuthenticated]);
 
   const register = useCallback(async (username: string, email: string, password: string) => {
     await authService.register({ username, email, password });
