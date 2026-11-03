@@ -39,6 +39,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+
+    // Only fetch the profile if we already have a stored access token.
+    // Otherwise (fresh visit, logged out) skip the call entirely so we
+    // never trigger an unnecessary 401 / redirect loop on the login page.
+    const hasToken =
+      typeof window !== "undefined" &&
+      localStorage.getItem("rentox_access_token");
+
+    if (!hasToken) {
+      setIsLoading(false);
+      return;
+    }
+
     authService.getProfile()
       .then(({ user }) => { if (!cancelled) setUser(user); })
       .catch((err) => {
@@ -49,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
+
     return () => { cancelled = true; };
   }, []);
 
