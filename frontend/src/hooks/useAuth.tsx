@@ -60,13 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     authService.getProfile()
-      .then(({ user }) => { if (!cancelled) { setUser(user); setIsAuthenticated(true); } })
+      .then(({ user }) => { if (!cancelled) { setUser(user); } })
       .catch((err) => {
         if (cancelled) return;
         setUser(null);
-        setIsAuthenticated(false);
+        // The token itself is the source of truth for authentication.
+        // A profile-fetch failure (network, CORS, 500) must NOT kick the
+        // user out — only a 401 means the token is truly invalid.
         if (axios.isAxiosError(err) && err.response?.status === 401) {
           setAccessToken(null);
+          setIsAuthenticated(false);
         }
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });
